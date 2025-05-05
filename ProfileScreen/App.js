@@ -6,6 +6,7 @@ import SplashScreen from './SplashScreen';
 import LoginScreen from './LoginScreen';
 import SignUpScreen from './SignUpScreen';
 import ProfileScreen from './ProfileScreen';
+import Page from './Page';
 import MyPageScreen from './MyPageScreen';
 import SearchAddressScreen from './SearchAddress';
 
@@ -19,6 +20,7 @@ export default function App() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="Page" component={Page} />
         <Stack.Screen name="MyPage" component={MyPageScreen} />
         <Stack.Screen name="SearchAddress" component={SearchAddressScreen} />
       </Stack.Navigator>

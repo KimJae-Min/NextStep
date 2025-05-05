@@ -8,7 +8,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [address, setAddress] = useState('');
   const [detailAddress, setDetailAddress] = useState('');
 
-  // 드롭다운 관련 장애 유무
+  // 장애 유무 드롭다운 상태
   const [disabilityOpen, setDisabilityOpen] = useState(false);
   const [disability, setDisability] = useState('없음');
   const [disabilityItems, setDisabilityItems] = useState([
@@ -16,7 +16,7 @@ export default function ProfileScreen({ navigation, route }) {
     { label: '있음', value: '있음' }
   ]);
 
-  // 나머지 입력값
+  // 기타 입력값 상태
   const [job, setJob] = useState('');
   const [income, setIncome] = useState('');
   const [spendingHabit, setSpendingHabit] = useState('');
@@ -35,7 +35,7 @@ export default function ProfileScreen({ navigation, route }) {
       return;
     }
 
-    // 입력한 데이터를 객체로 묶어서 마이페이지로 전달하며 이동
+    // 입력한 데이터를 객체로 묶음
     const profileData = {
       address,
       detailAddress,
@@ -47,8 +47,8 @@ export default function ProfileScreen({ navigation, route }) {
       fixedExpense,
     };
 
-    // 마이페이지로 이동
-    navigation.navigate('MyPage', { profileData });
+    // 프로필 입력 완료 후 메인화면(Page)으로 이동하며 데이터 전달
+    navigation.navigate('Page', { profileData });
   };
 
   return (
@@ -89,7 +89,7 @@ export default function ProfileScreen({ navigation, route }) {
         />
       </View>
 
-      {/* 장애유무 드롭다운 */}
+      {/* 장애 유무 드롭다운 */}
       <View style={{ width: '100%', marginBottom: 12, zIndex: 1000 }}>
         <Text>장애 유무</Text>
         <DropDownPicker
