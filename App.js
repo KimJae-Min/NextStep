@@ -2,8 +2,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import React from 'react';
 
+import { ThemeProvider } from './contexts/ThemeContext'; // 추가
 import { UserProvider } from './contexts/UserContext';
 import MyPageScreen from './screens/MyPageScreen';
 import RiskScreen from './screens/RiskScreen';
@@ -66,10 +66,12 @@ function MainTabs() {
 
 export default function App() {
   return (
-    <UserProvider>
-      <NavigationContainer>
-        <MainTabs />
-      </NavigationContainer>
-    </UserProvider>
+    <ThemeProvider>
+      <UserProvider>
+        <NavigationContainer>
+          <MainTabs />
+        </NavigationContainer>
+      </UserProvider>
+    </ThemeProvider>
   );
 }
