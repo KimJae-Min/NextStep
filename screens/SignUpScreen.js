@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet } from 'react-native';
 import { Button, Text, TextInput } from 'react-native-paper';
 import { useUser } from '../contexts/UserContext'; // Context import
@@ -15,6 +15,7 @@ export default function SignUpScreen() {
   const [birth, setBirth] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  // 주소 입력란은 삭제
 
   const handleSignUp = () => {
     if (!userId || !password || !confirmPassword || !name || !birth || !email || !phone) {
@@ -25,13 +26,13 @@ export default function SignUpScreen() {
       Alert.alert('비밀번호가 일치하지 않습니다.');
       return;
     }
-    // Context에 회원 정보 저장
+    // Context에 회원 정보 저장 (address는 빈 문자열로)
     login({
       name,
       birth,
       phone,
       email,
-      address,
+      address: '', // 나중에 입력받을 예정이므로 빈 값으로 저장
     });
     Alert.alert('회원가입 완료', `${name}님, 환영합니다!`);
     navigation.navigate('설정'); // 회원가입 후 설정 화면으로 이동
@@ -47,6 +48,7 @@ export default function SignUpScreen() {
       <TextInput label="생년월일 (YYYYMMDD)" value={birth} onChangeText={setBirth} keyboardType="numeric" style={styles.input} maxLength={8} />
       <TextInput label="이메일" value={email} onChangeText={setEmail} keyboardType="email-address" style={styles.input} />
       <TextInput label="휴대전화 번호" value={phone} onChangeText={setPhone} keyboardType="phone-pad" style={styles.input} />
+      {/* 주소 입력란은 삭제 */}
       <Button mode="contained" onPress={handleSignUp} style={styles.button}>회원가입</Button>
     </ScrollView>
   );
