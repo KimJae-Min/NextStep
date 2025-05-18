@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableOpacity,
   Modal,
   TextInput,
@@ -42,7 +41,6 @@ export default function Page() {
   const onTabPress = (tabName) => {
     setActiveTab(tabName);
     if (tabName === '마이페이지') {
-      // 마이페이지 탭 눌렀을 때 MyPageScreen으로 이동
       navigation.navigate('MyPage');
     }
   };
@@ -57,23 +55,18 @@ export default function Page() {
         <Text style={styles.loginText}>로그인</Text>
       </TouchableOpacity>
 
-      {/* 앱 이름 이미지 */}
-      <Image
-        source={require('./assets/logo_original.png')} // 실제 이미지 경로로 수정하세요
-        style={styles.appNameImage}
-      />
-
       {/* 탭 콘텐츠 */}
-      <ScrollView style={styles.tabContent}>
+      <View style={styles.tabContent}>
         {activeTab === '홈' && (
           <>
             {/* 소득 정보(월수입) */}
-            <View style={styles.sectionIncome}>
-              <TouchableOpacity onPress={() => setIsDialOpen(true)}>
-                <Text style={styles.title}>소득 정보</Text>
-                <Text style={styles.text}>{formattedIncome || '소득을 입력하세요'}</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={styles.sectionIncome}
+              onPress={() => setIsDialOpen(true)}
+            >
+              <Text style={styles.title}>소득 정보</Text>
+              <Text style={styles.text}>{formattedIncome || '소득을 입력하세요'}</Text>
+            </TouchableOpacity>
 
             {/* 정책 추천 */}
             <View style={styles.sectionPolicy}>
@@ -82,66 +75,51 @@ export default function Page() {
             </View>
 
             {/* 지출 위험도 */}
-            <View style={styles.sectionRisk}>
+            <TouchableOpacity
+              style={styles.sectionRisk}
+              onPress={() => navigation.navigate('Risk')}
+            >
               <Text style={styles.title}>지출 위험도</Text>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => navigation.navigate('지출위험도설명')}
-              >
-                <View
-                  style={[
-                    styles.progressBar,
-                    { backgroundColor: getRiskColor() },
-                  ]}
-                >
-                  <Text style={styles.progressText}>{`지출 퍼센트: ${spending}%`}</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
+              <Text style={styles.text}>{`지출 퍼센트: ${spending}%`}</Text>
+            </TouchableOpacity>
           </>
         )}
 
         {activeTab === '마이페이지' && (
-          <View style={{ alignItems: 'center', marginTop: 40 }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>
-              마이페이지로 이동합니다...
-            </Text>
-          </View>
+          <Text>마이페이지로 이동합니다...</Text>
         )}
-
         {activeTab === '정책추천' && (
-          <View style={{ alignItems: 'center', marginTop: 40 }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>정책추천 화면</Text>
-          </View>
+          <Text>정책추천 화면</Text>
         )}
-
         {activeTab === '설정' && (
-          <View style={{ alignItems: 'center', marginTop: 40 }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>설정 화면</Text>
-          </View>
+          <Text>설정 화면</Text>
         )}
-      </ScrollView>
+      </View>
 
       {/* 다이얼러 모달 */}
-      {isDialOpen && (
-        <Modal transparent={true} animationType="fade">
-          <View style={styles.dialBackground}>
-            <View style={styles.dialContent}>
-              <TextInput
-                style={styles.dialInput}
-                value={income}
-                onChangeText={(text) => setIncome(text.replace(/\D/g, ''))}
-                maxLength={6}
-                placeholder="만원 단위"
-                keyboardType="numeric"
-              />
-              <TouchableOpacity style={styles.saveButton} onPress={saveIncome}>
-                <Text style={styles.saveButtonText}>저장</Text>
-              </TouchableOpacity>
-            </View>
+      <Modal
+        visible={isDialOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsDialOpen(false)}
+      >
+        <View style={styles.dialBackground}>
+          <View style={styles.dialContent}>
+            <Text style={styles.title}>월 소득 입력</Text>
+            <TextInput
+              style={styles.dialInput}
+              value={income}
+              onChangeText={text => setIncome(text.replace(/\D/g, ''))}
+              maxLength={6}
+              placeholder="만원 단위"
+              keyboardType="numeric"
+            />
+            <TouchableOpacity style={styles.saveButton} onPress={saveIncome}>
+              <Text style={styles.saveButtonText}>저장</Text>
+            </TouchableOpacity>
           </View>
-        </Modal>
-      )}
+        </View>
+      </Modal>
 
       {/* 하단 탭 바 */}
       <View style={styles.tabBar}>
@@ -149,36 +127,28 @@ export default function Page() {
           style={[styles.tabItem, activeTab === '홈' && styles.activeTab]}
           onPress={() => onTabPress('홈')}
         >
-          <Text style={[styles.tabText, activeTab === '홈' && styles.activeTabText]}>
-            홈
-          </Text>
+          <Text style={[styles.tabText, activeTab === '홈' && styles.activeTabText]}>홈</Text>
         </TouchableOpacity>
-
+        <View style={styles.separator} />
         <TouchableOpacity
           style={[styles.tabItem, activeTab === '마이페이지' && styles.activeTab]}
           onPress={() => onTabPress('마이페이지')}
         >
-          <Text style={[styles.tabText, activeTab === '마이페이지' && styles.activeTabText]}>
-            마이페이지
-          </Text>
+          <Text style={[styles.tabText, activeTab === '마이페이지' && styles.activeTabText]}>마이페이지</Text>
         </TouchableOpacity>
-
+        <View style={styles.separator} />
         <TouchableOpacity
           style={[styles.tabItem, activeTab === '정책추천' && styles.activeTab]}
           onPress={() => onTabPress('정책추천')}
         >
-          <Text style={[styles.tabText, activeTab === '정책추천' && styles.activeTabText]}>
-            정책추천
-          </Text>
+          <Text style={[styles.tabText, activeTab === '정책추천' && styles.activeTabText]}>정책추천</Text>
         </TouchableOpacity>
-
+        <View style={styles.separator} />
         <TouchableOpacity
           style={[styles.tabItem, activeTab === '설정' && styles.activeTab]}
           onPress={() => onTabPress('설정')}
         >
-          <Text style={[styles.tabText, activeTab === '설정' && styles.activeTabText]}>
-            설정
-          </Text>
+          <Text style={[styles.tabText, activeTab === '설정' && styles.activeTabText]}>설정</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -227,11 +197,12 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 10,
     marginBottom: 20,
-    height: 320,
+    height: 120,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    justifyContent: 'center',
   },
   sectionRisk: {
     backgroundColor: 'white',

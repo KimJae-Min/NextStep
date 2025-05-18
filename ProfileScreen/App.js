@@ -9,20 +9,22 @@ import ProfileScreen from './ProfileScreen';
 import Page from './Page';
 import MyPageScreen from './MyPageScreen';
 import SearchAddressScreen from './SearchAddress';
+import RiskScreen from './RiskScreen'; // 반드시 추가
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="SplashScreen">
-        <Stack.Screen name="SplashScreen" component={SplashScreen} />
+      <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Page" component={Page} />
         <Stack.Screen name="MyPage" component={MyPageScreen} />
         <Stack.Screen name="SearchAddress" component={SearchAddressScreen} />
+        <Stack.Screen name="Risk" component={RiskScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
