@@ -9,7 +9,9 @@ import ProfileScreen from './ProfileScreen';
 import Page from './Page';
 import MyPageScreen from './MyPageScreen';
 import SearchAddressScreen from './SearchAddress';
-import RiskScreen from './RiskScreen'; // 반드시 추가
+import RiskScreen from './RiskScreen';
+import Planner from './Planner';
+import PolicyRecommendation from './PolicyRecommendation'; // 정책추천 페이지가 있다면 추가
 
 const Stack = createNativeStackNavigator();
 
@@ -25,6 +27,8 @@ export default function App() {
         <Stack.Screen name="MyPage" component={MyPageScreen} />
         <Stack.Screen name="SearchAddress" component={SearchAddressScreen} />
         <Stack.Screen name="Risk" component={RiskScreen} />
+        <Stack.Screen name="Planner" component={Planner} />
+        <Stack.Screen name="PolicyRecommendation" component={PolicyRecommendation} />
       </Stack.Navigator>
     </NavigationContainer>
   );

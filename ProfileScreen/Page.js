@@ -7,14 +7,15 @@ import {
   Modal,
   TextInput,
   Dimensions,
-  ScrollView,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 const windowHeight = Dimensions.get('window').height;
 
 export default function Page() {
   const navigation = useNavigation();
+  const route = useRoute();
+  const profileData = route.params?.profileData || {};
 
   const [spending] = useState(50); // 지출 퍼센트
   const [income, setIncome] = useState('');
@@ -24,16 +25,9 @@ export default function Page() {
   const recommendPolicy = income > 2500 ? '주거 지원 정책 추천' : '일반 지원 정책 추천';
   const formattedIncome = income ? `${income}만원` : '';
 
-  const getRiskColor = () => {
-    if (spending > 80) return 'red';
-    if (spending > 30) return 'orange';
-    return 'green';
-  };
-
   const saveIncome = () => {
     if (income !== '') {
       setIsDialOpen(false);
-      // 추가 저장 로직 필요 시 여기에 작성
     }
   };
 
@@ -41,7 +35,10 @@ export default function Page() {
   const onTabPress = (tabName) => {
     setActiveTab(tabName);
     if (tabName === '마이페이지') {
-      navigation.navigate('MyPage');
+      navigation.navigate('MyPage', { profileData });
+    }
+    if (tabName === '정책추천') {
+      navigation.navigate('PolicyRecommendation');
     }
   };
 
@@ -69,15 +66,18 @@ export default function Page() {
             </TouchableOpacity>
 
             {/* 정책 추천 */}
-            <View style={styles.sectionPolicy}>
+            <TouchableOpacity
+              style={styles.sectionPolicy}
+              onPress={() => navigation.navigate('PolicyRecommendation')}
+            >
               <Text style={styles.title}>정책 추천</Text>
               <Text style={styles.text}>{recommendPolicy}</Text>
-            </View>
+            </TouchableOpacity>
 
             {/* 지출 위험도 */}
             <TouchableOpacity
               style={styles.sectionRisk}
-              onPress={() => navigation.navigate('Risk')}
+              onPress={() => navigation.navigate('Planner', { profileData })}
             >
               <Text style={styles.title}>지출 위험도</Text>
               <Text style={styles.text}>{`지출 퍼센트: ${spending}%`}</Text>
