@@ -1,47 +1,82 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
-import { useUser } from '../contexts/UserContext'; // Context import
+import { useThemeMode } from '../contexts/ThemeContext';
+import { useUser } from '../contexts/UserContext';
 
 export default function SettingsScreen({ navigation }) {
-  const { user, logout } = useUser(); // Context에서 user 정보와 logout 함수 사용
+  const { user, logout } = useUser();
+  const { darkMode, toggleDarkMode } = useThemeMode();
   const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
 
   const toggleNotifications = () => setNotifications(prev => !prev);
-  const toggleDarkMode = () => setDarkMode(prev => !prev);
 
   // 내 정보(마이페이지)로 이동
   const goToMyInfo = () => {
     navigation.navigate('MyPage');
   };
 
+  // 다크모드용 동적 스타일
+  const containerStyle = [
+    styles.container,
+    darkMode && { backgroundColor: '#222' },
+  ];
+  const titleStyle = [
+    styles.title,
+    darkMode && { color: '#fff' },
+  ];
+  const userNameStyle = [
+    styles.userName,
+    darkMode && { color: '#fff' },
+  ];
+  const infoRowStyle = [
+    styles.infoRow,
+    darkMode && { backgroundColor: '#222' }, // 다크모드에서 infoRow도 검정
+  ];
+  const infoLabelStyle = [
+    styles.infoLabel,
+    darkMode && { color: '#fff' },
+  ];
+  const infoSubLabelStyle = [
+    styles.infoSubLabel,
+    darkMode && { color: '#bbb' },
+  ];
+  const separatorStyle = [
+    styles.separator,
+    darkMode && { backgroundColor: '#444' },
+  ];
+  const settingRowTextStyle = darkMode ? { color: '#fff' } : {};
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>설정</Text>
-      <Text style={styles.userName}>{user.name || '이름 없음'}</Text>
+    <View style={containerStyle}>
+      <Text style={titleStyle}>설정</Text>
+      <Text style={userNameStyle}>{user.name || '이름 없음'}</Text>
 
       {/* 내정보 한 줄만, 주소관리 설명 포함 */}
-      <TouchableOpacity style={styles.infoRow} onPress={goToMyInfo}>
+      <TouchableOpacity style={infoRowStyle} onPress={goToMyInfo}>
         <View>
-          <Text style={styles.infoLabel}>내 정보</Text>
-          <Text style={styles.infoSubLabel}>이름, 연락처, 이메일, 주소 관리 등</Text>
+          <Text style={infoLabelStyle}>내 정보</Text>
+          <Text style={infoSubLabelStyle}>이름, 연락처, 이메일, 주소 관리 등</Text>
         </View>
-        <MaterialIcons name="chevron-right" size={24} color="#888" />
+        <MaterialIcons name="chevron-right" size={24} color={darkMode ? "#fff" : "#888"} />
       </TouchableOpacity>
 
-      <View style={styles.separator} />
+      <View style={separatorStyle} />
 
       <View style={styles.settingRow}>
-        <Text>알림 받기</Text>
+        <Text style={settingRowTextStyle}>알림 받기</Text>
         <Switch value={notifications} onValueChange={toggleNotifications} />
       </View>
       <View style={styles.settingRow}>
-        <Text>다크모드</Text>
+        <Text style={settingRowTextStyle}>다크모드</Text>
         <Switch value={darkMode} onValueChange={toggleDarkMode} />
       </View>
       <View style={styles.buttonContainer}>
-        <Button title="로그아웃" onPress={logout} />
+        <Button
+          title="로그아웃"
+          onPress={logout}
+          color={darkMode ? "#222" : undefined} // 다크모드에서 검정 글자
+        />
       </View>
     </View>
   );
@@ -59,6 +94,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
     textAlign: 'left',
+    color: '#222',
   },
   userName: {
     fontSize: 20,
