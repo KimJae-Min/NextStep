@@ -1,3 +1,4 @@
+//플래너
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';

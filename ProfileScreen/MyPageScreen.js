@@ -1,96 +1,106 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+//마이페이지
+import { MaterialIcons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { Button, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useThemeMode } from './ThemeContext'; // 경로 수정
+import { useUser } from './UserContext';       // 경로 수정
 
-export default function MyPageScreen({ navigation, route }) {
-  const initialData = route.params?.profileData || {};
+export default function MyPageScreen({ navigation }) {
+  const { user, login } = useUser();
+  const { darkMode } = useThemeMode();
+  const [editField, setEditField] = useState(null);
+  const [tempValue, setTempValue] = useState('');
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const [address, setAddress] = useState(initialData.address || '');
-  const [detailAddress, setDetailAddress] = useState(initialData.detailAddress || '');
-  const [zonecode, setZonecode] = useState(initialData.zonecode || '');
-  const [job, setJob] = useState(initialData.job || '');
-  const [disability, setDisability] = useState(initialData.disability || '없음');
-  const [income, setIncome] = useState(initialData.income || '');
-  const [spendingHabit, setSpendingHabit] = useState(initialData.spendingHabit || '');
-  const [fixedExpense, setFixedExpense] = useState(initialData.fixedExpense || '');
-
-  const onSave = () => {
-    if (!address || !job || !income || !spendingHabit || !fixedExpense) {
-      Alert.alert('오류', '모든 항목을 입력하세요.');
-      return;
-    }
-
-    // 저장 처리 (예: 서버 API 호출 등) 후 사용자에게 알림
-    Alert.alert('저장 완료', '프로필 정보가 수정되었습니다.');
-
-    // 필요시 이전 화면으로 돌아가기
-    // navigation.goBack();
+  const startEdit = (field, value) => {
+    setEditField(field);
+    setTempValue(value);
+    setIsModalVisible(true);
   };
 
+  const saveEdit = () => {
+    if (editField) {
+      const updatedUser = { ...user, [editField]: tempValue };
+      login(updatedUser);
+      setIsModalVisible(false);
+    }
+  };
+
+  const containerStyle = [
+    styles.container,
+    darkMode && { backgroundColor: '#222' },
+  ];
+  const headerTitleStyle = [
+    styles.headerTitle,
+    darkMode && { color: '#fff' },
+  ];
+  const modalContentStyle = [
+    styles.modalContent,
+    darkMode && { backgroundColor: '#222' },
+  ];
+  const modalInputStyle = [
+    styles.modalInput,
+    darkMode && { color: '#fff', borderBottomColor: '#555' },
+  ];
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>마이페이지 - 프로필 수정</Text>
+    <View style={containerStyle}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <MaterialIcons name="arrow-back" size={28} color={darkMode ? "#fff" : "#222"} />
+        </TouchableOpacity>
+        <Text style={headerTitleStyle}>{user.name}님의 정보</Text>
+      </View>
+      <View style={styles.infoList}>
+        <InfoRow label="이름" value={user.name} onPress={() => startEdit('name', user.name)} darkMode={darkMode} />
+        <InfoRow label="생년월일" value={user.birth} onPress={() => startEdit('birth', user.birth)} darkMode={darkMode} />
+        <InfoRow label="전화번호" value={user.phone} onPress={() => startEdit('phone', user.phone)} darkMode={darkMode} />
+        <InfoRow label="이메일" value={user.email} onPress={() => startEdit('email', user.email)} darkMode={darkMode} />
+        <InfoRow label="주소" value={user.address} onPress={() => startEdit('address', user.address)} darkMode={darkMode} />
+      </View>
+      <Modal visible={isModalVisible} transparent animationType="fade">
+        <View style={styles.modalContainer}>
+          <View style={modalContentStyle}>
+            <TextInput
+              style={modalInputStyle}
+              value={tempValue}
+              onChangeText={setTempValue}
+              placeholder="수정할 내용을 입력하세요"
+              placeholderTextColor={darkMode ? "#888" : "#aaa"}
+            />
+            <View style={styles.modalButtons}>
+              <Button onPress={saveEdit}>저장</Button>
+              <Button onPress={() => setIsModalVisible(false)}>취소</Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+}
 
-      <Text>주소</Text>
-      <TextInput style={styles.input} value={address} onChangeText={setAddress} />
-
-      <Text>상세 주소</Text>
-      <TextInput style={styles.input} value={detailAddress} onChangeText={setDetailAddress} />
-
-      <Text>우편번호</Text>
-      <TextInput style={styles.input} value={zonecode} onChangeText={setZonecode} />
-
-      <Text>직업</Text>
-      <TextInput style={styles.input} value={job} onChangeText={setJob} />
-
-      <Text>장애 유무</Text>
-      <TextInput style={styles.input} value={disability} onChangeText={setDisability} />
-
-      <Text>소득</Text>
-      <TextInput style={styles.input} value={income} onChangeText={setIncome} />
-
-      <Text>소비 습관</Text>
-      <TextInput style={styles.input} value={spendingHabit} onChangeText={setSpendingHabit} />
-
-      <Text>고정 지출</Text>
-      <TextInput style={styles.input} value={fixedExpense} onChangeText={setFixedExpense} />
-
-      <TouchableOpacity style={styles.button} onPress={onSave}>
-        <Text style={styles.buttonText}>저장</Text>
-      </TouchableOpacity>
-    </ScrollView>
+function InfoRow({ label, value, onPress, darkMode }) {
+  return (
+    <TouchableOpacity style={styles.infoRow} onPress={onPress}>
+      <View>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={[styles.infoValue, darkMode && { color: '#fff' }]}>{value || '정보 없음'}</Text>
+      </View>
+      <MaterialIcons name="edit" size={22} color={darkMode ? "#fff" : "#222"} />
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 24,
-    backgroundColor: '#FBFAFB',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 24,
-  },
-  input: {
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    height: 48,
-    marginBottom: 16,
-    backgroundColor: '#fff',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 16,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
+  container: { flex: 1, padding: 24, paddingTop: 56, backgroundColor: '#E9F3E0' },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 36 },
+  headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#222', marginLeft: 12 },
+  infoList: { marginTop: 12 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  infoLabel: { fontSize: 15, color: '#888', marginBottom: 2 },
+  infoValue: { fontSize: 18, color: '#222', fontWeight: '500' },
+  modalContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalContent: { width: '80%', padding: 20, backgroundColor: 'white', borderRadius: 10 },
+  modalInput: { borderBottomWidth: 1, borderBottomColor: '#ddd', marginBottom: 20, fontSize: 16, padding: 8, color: '#222' },
+  modalButtons: { flexDirection: 'row', justifyContent: 'space-around' },
 });

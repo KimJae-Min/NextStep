@@ -1,3 +1,4 @@
+//지출위험도
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import RNSpeedometer from 'react-native-speedometer';

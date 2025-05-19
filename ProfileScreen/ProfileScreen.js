@@ -1,3 +1,4 @@
+//회원정보입력
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';

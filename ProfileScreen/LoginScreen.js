@@ -1,3 +1,4 @@
+//로그인화면
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 
@@ -10,26 +11,24 @@ export default function LoginScreen({ navigation }) {
       Alert.alert('오류', '이메일과 비밀번호를 모두 입력하세요.');
       return;
     }
-    navigation.navigate('Profile'); // 로그인 성공 시 프로필 입력 화면으로 이동
+    navigation.navigate('Profile'); // 로그인 시 프로필 입력 화면으로 이동
   };
 
   const onSignup = () => {
-    navigation.navigate('SignUp'); // 회원가입 화면으로 이동
+    navigation.navigate('SignUp');
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>로그인</Text>
-
       <TextInput
         style={styles.input}
         placeholder="이메일"
         value={email}
         onChangeText={setEmail}
-        autoCapitalize="none"
         keyboardType="email-address"
+        autoCapitalize="none"
       />
-
       <TextInput
         style={styles.input}
         placeholder="비밀번호"
@@ -37,12 +36,9 @@ export default function LoginScreen({ navigation }) {
         onChangeText={setPassword}
         secureTextEntry
       />
-
       <TouchableOpacity style={styles.button} onPress={onLogin}>
         <Text style={styles.buttonText}>로그인</Text>
       </TouchableOpacity>
-
-      {/* 회원가입 버튼 */}
       <TouchableOpacity style={styles.signupButton} onPress={onSignup}>
         <Text style={styles.signupText}>회원가입</Text>
       </TouchableOpacity>

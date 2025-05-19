@@ -1,3 +1,4 @@
+//메인화면
 import React, { useState } from 'react';
 import {
   View,
@@ -21,14 +22,16 @@ export default function Page() {
   const [income, setIncome] = useState('');
   const [isDialOpen, setIsDialOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('홈');
+  const [bankConnected, setBankConnected] = useState(false);
+
+  // 예시: 현재 금액(순자산)
+  const [currentAmount, setCurrentAmount] = useState(500000); // 50만원 예시
 
   const recommendPolicy = income > 2500 ? '주거 지원 정책 추천' : '일반 지원 정책 추천';
   const formattedIncome = income ? `${income}만원` : '';
 
   const saveIncome = () => {
-    if (income !== '') {
-      setIsDialOpen(false);
-    }
+    if (income !== '') setIsDialOpen(false);
   };
 
   // 탭 선택 시 처리 함수
@@ -40,6 +43,20 @@ export default function Page() {
     if (tabName === '정책추천') {
       navigation.navigate('PolicyRecommendation');
     }
+    if (tabName === '설정') {
+      navigation.navigate('Settings');
+    }
+  };
+
+  // 은행계좌 연결 버튼 클릭 시
+  const handleBankConnect = () => {
+    setBankConnected(true);
+    // 실제 은행 연결 로직 또는 navigation 추가 가능
+  };
+
+  // 가계부 등록 버튼 클릭 시 LedgerScreen으로 이동
+  const handleLedgerRegister = () => {
+    navigation.navigate('Ledger'); // App.js에 Stack.Screen name="Ledger"로 등록 필요
   };
 
   return (
@@ -53,59 +70,66 @@ export default function Page() {
       </TouchableOpacity>
 
       {/* 탭 콘텐츠 */}
-      <View style={styles.tabContent}>
-        {activeTab === '홈' && (
-          <>
-            {/* 소득 정보(월수입) */}
-            <TouchableOpacity
-              style={styles.sectionIncome}
-              onPress={() => setIsDialOpen(true)}
-            >
-              <Text style={styles.title}>소득 정보</Text>
+      {activeTab === '홈' && (
+        <>
+          {/* 소득 정보(월수입) */}
+          <View style={styles.sectionIncome}>
+            <Text style={styles.title}>소득 정보</Text>
+            <TouchableOpacity onPress={() => setIsDialOpen(true)}>
               <Text style={styles.text}>{formattedIncome || '소득을 입력하세요'}</Text>
             </TouchableOpacity>
 
-            {/* 정책 추천 */}
-            <TouchableOpacity
-              style={styles.sectionPolicy}
-              onPress={() => navigation.navigate('PolicyRecommendation')}
-            >
-              <Text style={styles.title}>정책 추천</Text>
+            {/* 현재 금액(순자산) */}
+            <View style={styles.assetSummary}>
+              <Text style={styles.assetTitle}>현재 금액(순자산)</Text>
+              <Text style={styles.assetAmount}>
+                {currentAmount.toLocaleString()}원
+              </Text>
+            </View>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.connectButton,
+                  bankConnected && styles.activeConnectButton,
+                ]}
+                onPress={handleBankConnect}
+              >
+                <Text style={styles.connectButtonText}>
+                  {bankConnected ? '은행 계좌 연결됨' : '은행 계좌 연결'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.connectButton}
+                onPress={handleLedgerRegister}
+              >
+                <Text style={styles.connectButtonText}>가계부 등록</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* 정책 추천 */}
+          <View style={styles.sectionPolicy}>
+            <Text style={styles.title}>정책 추천</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('PolicyRecommendation')}>
               <Text style={styles.text}>{recommendPolicy}</Text>
             </TouchableOpacity>
+          </View>
 
-            {/* 지출 위험도 */}
-            <TouchableOpacity
-              style={styles.sectionRisk}
-              onPress={() => navigation.navigate('Planner', { profileData })}
-            >
-              <Text style={styles.title}>지출 위험도</Text>
+          {/* 지출 위험도(플래너) */}
+          <View style={styles.sectionRisk}>
+            <Text style={styles.title}>지출 위험도</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Planner', { profileData })}>
               <Text style={styles.text}>{`지출 퍼센트: ${spending}%`}</Text>
             </TouchableOpacity>
-          </>
-        )}
-
-        {activeTab === '마이페이지' && (
-          <Text>마이페이지로 이동합니다...</Text>
-        )}
-        {activeTab === '정책추천' && (
-          <Text>정책추천 화면</Text>
-        )}
-        {activeTab === '설정' && (
-          <Text>설정 화면</Text>
-        )}
-      </View>
+          </View>
+        </>
+      )}
 
       {/* 다이얼러 모달 */}
-      <Modal
-        visible={isDialOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsDialOpen(false)}
-      >
+      <Modal visible={isDialOpen} transparent animationType="fade">
         <View style={styles.dialBackground}>
           <View style={styles.dialContent}>
-            <Text style={styles.title}>월 소득 입력</Text>
+            <Text>월 소득 입력</Text>
             <TextInput
               style={styles.dialInput}
               value={income}
@@ -129,21 +153,12 @@ export default function Page() {
         >
           <Text style={[styles.tabText, activeTab === '홈' && styles.activeTabText]}>홈</Text>
         </TouchableOpacity>
-        <View style={styles.separator} />
-        <TouchableOpacity
-          style={[styles.tabItem, activeTab === '마이페이지' && styles.activeTab]}
-          onPress={() => onTabPress('마이페이지')}
-        >
-          <Text style={[styles.tabText, activeTab === '마이페이지' && styles.activeTabText]}>마이페이지</Text>
-        </TouchableOpacity>
-        <View style={styles.separator} />
         <TouchableOpacity
           style={[styles.tabItem, activeTab === '정책추천' && styles.activeTab]}
           onPress={() => onTabPress('정책추천')}
         >
           <Text style={[styles.tabText, activeTab === '정책추천' && styles.activeTabText]}>정책추천</Text>
         </TouchableOpacity>
-        <View style={styles.separator} />
         <TouchableOpacity
           style={[styles.tabItem, activeTab === '설정' && styles.activeTab]}
           onPress={() => onTabPress('설정')}
@@ -161,13 +176,6 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#E9F3E0',
     marginBottom: 80,
-  },
-  appNameImage: {
-    width: 150,
-    height: 70,
-    resizeMode: 'contain',
-    alignSelf: 'flex-start',
-    marginBottom: 30,
   },
   loginButton: {
     position: 'absolute',
@@ -191,6 +199,43 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+  },
+  assetSummary: {
+    alignItems: 'center',
+    marginVertical: 15,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#f8f8f8',
+  },
+  assetTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  assetAmount: {
+    fontSize: 24,
+    color: 'blue',
+    fontWeight: 'bold',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+  },
+  connectButton: {
+    flex: 1,
+    backgroundColor: '#EAF3E1',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  activeConnectButton: {
+    backgroundColor: '#70d7c7',
+  },
+  connectButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   sectionPolicy: {
     backgroundColor: 'white',
@@ -224,17 +269,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: '#666',
   },
-  progressBar: {
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  progressText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
   tabBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -262,11 +296,6 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: 'black',
     fontSize: 20,
-  },
-  separator: {
-    width: 1,
-    height: '100%',
-    backgroundColor: 'black',
   },
   dialBackground: {
     flex: 1,
@@ -298,8 +327,5 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
     fontSize: 18,
-  },
-  tabContent: {
-    marginBottom: 20,
   },
 });
