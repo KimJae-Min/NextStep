@@ -1,75 +1,368 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  ScrollView,
+} from 'react-native';
+import { Calendar } from 'react-native-calendars';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function LedgerScreen() {
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [entries, setEntries] = useState([]);
+  const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState('');
+  const [monthlyIncome, setMonthlyIncome] = useState(0);
+  const [monthlyExpense, setMonthlyExpense] = useState(0);
 
-export default function HomeScreen() {
+  const handleAddEntry = () => {
+    if (!selectedDate || !amount || !description) return;
+
+    // 숫자 변환, 마이너스도 가능
+    const parsedAmount = parseInt(amount, 10);
+    if (isNaN(parsedAmount)) return;
+
+    const newEntry = {
+      id: Date.now().toString(),
+      date: selectedDate,
+      amount: parsedAmount,
+      description,
+      type: parsedAmount >= 0 ? 'income' : 'expense',
+    };
+    setEntries(prev => [...prev, newEntry]);
+
+    // 입력 초기화
+    setAmount('');
+    setDescription('');
+  };
+
+  // 월별 수입/지출 합산
+  useEffect(() => {
+    const filtered = entries.filter(e => e.date.startsWith(selectedMonth));
+    const incomeSum = filtered
+      .filter(e => e.amount >= 0)
+      .reduce((sum, e) => sum + e.amount, 0);
+    const expenseSum = filtered
+      .filter(e => e.amount < 0)
+      .reduce((sum, e) => sum + Math.abs(e.amount), 0);
+    setMonthlyIncome(incomeSum);
+    setMonthlyExpense(expenseSum);
+  }, [selectedMonth, entries]);
+
+  // 날짜별 수입/지출 요약 객체
+  const getDateSummary = () => {
+    const summary = {};
+    entries.forEach(entry => {
+      if (entry.date.startsWith(selectedMonth)) {
+        if (!summary[entry.date]) summary[entry.date] = { income: 0, expense: 0 };
+        if (entry.amount >= 0) summary[entry.date].income += entry.amount;
+        else summary[entry.date].expense += Math.abs(entry.amount);
+      }
+    });
+    return summary;
+  };
+
+  const getFormattedMonthTitle = (monthStr) => {
+    const [year, month] = monthStr.split('-');
+    return `${year}년 ${parseInt(month, 10)}월`;
+  };
+
+  const dateSummary = getDateSummary();
+
+  // 달력 마킹용
+  const markedDates = {};
+  Object.entries(dateSummary).forEach(([date, { income, expense }]) => {
+    markedDates[date] = {
+      customStyles: {
+        container: {
+          backgroundColor: 'white',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 20,
+          paddingVertical: 5,
+        },
+        text: { color: '#000' },
+      },
+      income,
+      expense,
+      marked: true,
+      dots: [
+        ...(income ? [{ key: 'income', color: 'blue' }] : []),
+        ...(expense ? [{ key: 'expense', color: 'red' }] : []),
+      ],
+    };
+  });
+
+  if (selectedDate) {
+    markedDates[selectedDate] = {
+      ...(markedDates[selectedDate] || {}),
+      selected: true,
+      selectedColor: '#70d7c7',
+    };
+  }
+
+  // 달력 날짜 커스텀 렌더링
+  const renderDay = ({ date, state }) => {
+    if (!date) return <View style={{ width: 36, height: 56 }} />;
+    const dateStr = date.dateString;
+    const summary = dateSummary[dateStr] || { income: 0, expense: 0 };
+    const isSelected = selectedDate === dateStr;
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.dayContainer,
+          isSelected && styles.selectedDayContainer,
+          state === 'disabled' && { opacity: 0.4 },
+        ]}
+        onPress={() => setSelectedDate(dateStr)}
+      >
+        <Text style={[styles.dayText, state === 'disabled' && { color: '#999' }]}>
+          {date.day}
+        </Text>
+        <View style={styles.dotsContainer}>
+          {summary.income > 0 && <View style={[styles.dot, { backgroundColor: 'blue' }]} />}
+          {summary.expense > 0 && <View style={[styles.dot, { backgroundColor: 'red' }]} />}
+        </View>
+        <View style={{ marginTop: 2, alignItems: 'center' }}>
+          {summary.income > 0 && (
+            <Text
+              style={{ fontSize: 7, color: 'blue' }}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              adjustsFontSizeToFit
+            >
+              +{summary.income.toLocaleString('ko-KR')}
+            </Text>
+          )}
+          {summary.expense > 0 && (
+            <Text
+              style={{ fontSize: 7, color: 'red' }}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              adjustsFontSizeToFit
+            >
+              -{summary.expense.toLocaleString('ko-KR')}
+            </Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // 리스트 항목 렌더링
+  const renderItem = ({ item }) => (
+    <View style={styles.entryItem}>
+      <Text style={styles.entryText}>
+        {item.date}: {item.description} - {item.amount.toLocaleString()}원
+      </Text>
+    </View>
+  );
+
+  // 금액 입력 필터 (숫자, 맨 앞에만 마이너스 가능)
+  const handleAmountChange = (text) => {
+    // 숫자와 '-'만 허용하고, '-'는 맨 앞에만 허용
+    let filtered = text.replace(/[^0-9\-]/g, '');
+    if (filtered.includes('-')) {
+      // '-'가 여러개면 하나만 앞에 허용
+      filtered = '-' + filtered.replace(/-/g, '');
+    }
+    setAmount(filtered);
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
+      <View style={styles.summaryBoxContainer}>
+        <View style={styles.summaryBox}>
+          <Text style={styles.summaryMonth}>{getFormattedMonthTitle(selectedMonth)}</Text>
+          <Text style={styles.summaryLabel}>총 수입</Text>
+          <Text style={styles.summaryValue}>{monthlyIncome.toLocaleString()}원</Text>
+        </View>
+        <View style={styles.summaryBox}>
+          <Text style={styles.summaryMonth}>{getFormattedMonthTitle(selectedMonth)}</Text>
+          <Text style={styles.summaryLabel}>총 지출</Text>
+          <Text style={styles.summaryValue}>{monthlyExpense.toLocaleString()}원</Text>
+        </View>
+      </View>
+
+      <Calendar
+        onDayPress={(day) => setSelectedDate(day.dateString)}
+        onMonthChange={(month) =>
+          setSelectedMonth(`${month.year}-${String(month.month).padStart(2, '0')}`)
+        }
+        dayComponent={renderDay}
+        markingType={'custom'}
+        markedDates={markedDates}
+        style={styles.calendar}
+      />
+
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="수입/지출"
+          placeholderTextColor="#999"
+          keyboardType="default"
+          value={amount}
+          onChangeText={handleAmountChange}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        <Text style={styles.hintText}>* 지출은 금액 앞에 '-'를 붙여 입력해주세요.</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="내용"
+          placeholderTextColor="#999"
+          value={description}
+          onChangeText={setDescription}
+        />
+        <TouchableOpacity style={styles.button} onPress={handleAddEntry}>
+          <Text style={styles.buttonText}>기록</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.entryListContainer}>
+        <Text style={styles.entryListTitle}>내역</Text>
+        <FlatList
+          data={entries.filter((entry) => entry.date === selectedDate)}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={{ paddingBottom: 30 }}
+          nestedScrollEnabled={true}
+        />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#fff',
+    paddingTop: 50,
   },
-  stepContainer: {
-    gap: 8,
+  summaryBoxContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 3,
+  },
+  summaryBox: {
+    flex: 1,
+    backgroundColor: '#EAF3E1',
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 7,
+  },
+  summaryMonth: {
+    fontSize: 14,
+    color: '#888',
+  },
+  summaryLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  summaryValue: {
+    fontSize: 18,
+    color: '#000',
+    marginTop: 2,
+  },
+  calendar: {
+    marginBottom: 0,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  dayContainer: {
+    width: 40,
+    height: 35,
+    alignItems: 'center',
+  },
+  selectedDayContainer: {
+    backgroundColor: '#EAF3E1',
+    borderRadius: 20,
+  },
+  dayText: {
+    fontSize: 12,
+    color: '#000',
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    marginTop: 0,
+  },
+  dot: {
+    width: 5,
+    height: 6,
+    borderRadius: 3,
+    marginHorizontal: 1,
+  },
+  inputContainer: {
+    marginBottom: 10,
+  },
+  hintText: {
+    color: 'red',
+    marginBottom: 4,
+    fontSize: 10,
+    paddingLeft: 4,
+  },
+  input: {
+    height: 35,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 3,
+    color: '#000',
+  },
+  button: {
+    backgroundColor: '#EAF3E1',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#445441',
+    fontWeight: 'bold',
+  },
+  entryListContainer: {
+    maxHeight: 300,
+    marginTop: 10,
+  },
+  entryListTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  entryItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    borderRadius: 8,
+    backgroundColor: '#fafafa',
+  },
+  entryText: {
+    fontSize: 15,
   },
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
