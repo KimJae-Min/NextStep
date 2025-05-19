@@ -11,6 +11,8 @@ import {
 import { Calendar } from 'react-native-calendars';
 
 export default function LedgerScreen() {
+  const [accountBalance, setAccountBalance] = useState(0);
+  const [balanceInput, setBalanceInput] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [entries, setEntries] = useState([]);
@@ -22,7 +24,6 @@ export default function LedgerScreen() {
   const handleAddEntry = () => {
     if (!selectedDate || !amount || !description) return;
 
-    // 숫자 변환, 마이너스도 가능
     const parsedAmount = parseInt(amount, 10);
     if (isNaN(parsedAmount)) return;
 
@@ -33,14 +34,24 @@ export default function LedgerScreen() {
       description,
       type: parsedAmount >= 0 ? 'income' : 'expense',
     };
+
     setEntries(prev => [...prev, newEntry]);
 
-    // 입력 초기화
+    // 계좌 잔액 반영
+    setAccountBalance(prev => prev + parsedAmount);
+
     setAmount('');
     setDescription('');
   };
 
-  // 월별 수입/지출 합산
+  const handleBalanceChange = () => {
+    const parsed = parseInt(balanceInput, 10);
+    if (!isNaN(parsed)) {
+      setAccountBalance(parsed);
+    }
+    setBalanceInput('');
+  };
+
   useEffect(() => {
     const filtered = entries.filter(e => e.date.startsWith(selectedMonth));
     const incomeSum = filtered
@@ -53,7 +64,6 @@ export default function LedgerScreen() {
     setMonthlyExpense(expenseSum);
   }, [selectedMonth, entries]);
 
-  // 날짜별 수입/지출 요약 객체
   const getDateSummary = () => {
     const summary = {};
     entries.forEach(entry => {
@@ -73,7 +83,6 @@ export default function LedgerScreen() {
 
   const dateSummary = getDateSummary();
 
-  // 달력 마킹용
   const markedDates = {};
   Object.entries(dateSummary).forEach(([date, { income, expense }]) => {
     markedDates[date] = {
@@ -105,7 +114,6 @@ export default function LedgerScreen() {
     };
   }
 
-  // 달력 날짜 커스텀 렌더링
   const renderDay = ({ date, state }) => {
     if (!date) return <View style={{ width: 36, height: 56 }} />;
     const dateStr = date.dateString;
@@ -130,22 +138,12 @@ export default function LedgerScreen() {
         </View>
         <View style={{ marginTop: 2, alignItems: 'center' }}>
           {summary.income > 0 && (
-            <Text
-              style={{ fontSize: 7, color: 'blue' }}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              adjustsFontSizeToFit
-            >
+            <Text style={{ fontSize: 7, color: 'blue' }}>
               +{summary.income.toLocaleString('ko-KR')}
             </Text>
           )}
           {summary.expense > 0 && (
-            <Text
-              style={{ fontSize: 7, color: 'red' }}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              adjustsFontSizeToFit
-            >
+            <Text style={{ fontSize: 7, color: 'red' }}>
               -{summary.expense.toLocaleString('ko-KR')}
             </Text>
           )}
@@ -154,7 +152,6 @@ export default function LedgerScreen() {
     );
   };
 
-  // 리스트 항목 렌더링
   const renderItem = ({ item }) => (
     <View style={styles.entryItem}>
       <Text style={styles.entryText}>
@@ -163,12 +160,9 @@ export default function LedgerScreen() {
     </View>
   );
 
-  // 금액 입력 필터 (숫자, 맨 앞에만 마이너스 가능)
   const handleAmountChange = (text) => {
-    // 숫자와 '-'만 허용하고, '-'는 맨 앞에만 허용
     let filtered = text.replace(/[^0-9\-]/g, '');
     if (filtered.includes('-')) {
-      // '-'가 여러개면 하나만 앞에 허용
       filtered = '-' + filtered.replace(/-/g, '');
     }
     setAmount(filtered);
@@ -176,6 +170,26 @@ export default function LedgerScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
+      {/* 계좌 잔액 박스 */}
+      <View style={styles.balanceBox}>
+        <Text style={styles.balanceTitle}>현재 계좌 잔액</Text>
+        <Text style={styles.balanceValue}>{accountBalance.toLocaleString()}원</Text>
+        <View style={styles.balanceInputRow}>
+          <TextInput
+            style={styles.balanceInput}
+            placeholder="잔액 수정"
+            placeholderTextColor="#999"
+            keyboardType="numeric"
+            value={balanceInput}
+            onChangeText={setBalanceInput}
+          />
+          <TouchableOpacity style={styles.balanceButton} onPress={handleBalanceChange}>
+            <Text style={styles.balanceButtonText}>수정</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* 월별 수입/지출 요약 */}
       <View style={styles.summaryBoxContainer}>
         <View style={styles.summaryBox}>
           <Text style={styles.summaryMonth}>{getFormattedMonthTitle(selectedMonth)}</Text>
@@ -200,6 +214,7 @@ export default function LedgerScreen() {
         style={styles.calendar}
       />
 
+      {/* 입력창 */}
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
@@ -243,6 +258,47 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingTop: 50,
   },
+  balanceBox: {
+    backgroundColor: '#EAF3E1',
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  balanceTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  balanceValue: {
+    fontSize: 20,
+    color: '#000',
+    marginBottom: 8,
+  },
+  balanceInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  balanceInput: {
+    flex: 1,
+    height: 35,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginRight: 8,
+    color: '#000',
+  },
+  balanceButton: {
+    backgroundColor: '#bbb',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  balanceButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
   summaryBoxContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -259,7 +315,8 @@ const styles = StyleSheet.create({
   },
   summaryMonth: {
     fontSize: 14,
-    color: '#888',
+    color: '#000',
+    fontWeight: 'bold',
   },
   summaryLabel: {
     fontSize: 16,
@@ -347,6 +404,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 });
+
 
 
 
