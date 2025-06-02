@@ -1,23 +1,26 @@
-//정책추천
+// 정책추천
+
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { useThemeMode } from './ThemeContext';
 
 export default function AIPolicyScreen() {
   const [age, setAge] = useState('');
   const [job, setJob] = useState('');
   const [result, setResult] = useState('');
+  const { darkMode } = useThemeMode();
 
   const recommendPolicy = () => {
     if (age && job) {
       if (parseInt(age) < 30 && job === '학생') {
-        setResult({ 
-          type: 'success', 
-          text: '청년 대상 「꿈꾸는 장학금」 지원 가능\n- 지원금액: 월 50만원(최대 24개월)\n- 신청기간: ~2025.12.31' 
+        setResult({
+          type: 'success',
+          text: '청년 대상 「꿈꾸는 장학금」 지원 가능\n- 지원금액: 월 50만원(최대 24개월)\n- 신청기간: ~2025.12.31'
         });
       } else {
-        setResult({ 
-          type: 'info', 
-          text: '「지역맞춤 일자리」 창업지원금 추천\n- 최대 3천만원 지원\n- 5년 거치 후 5년 분할 상환' 
+        setResult({
+          type: 'info',
+          text: '「지역맞춤 일자리」 창업지원금 추천\n- 최대 3천만원 지원\n- 5년 거치 후 5년 분할 상환'
         });
       }
     } else {
@@ -25,71 +28,144 @@ export default function AIPolicyScreen() {
     }
   };
 
+  // 다크모드 조건부 스타일
+  const containerStyle = [
+    styles.container,
+    darkMode && { backgroundColor: '#181c1f' },
+  ];
+  const headerTitleStyle = [
+    styles.title,
+    darkMode && { color: '#fff' },
+  ];
+  const subtitleStyle = [
+    styles.subtitle,
+    darkMode && { color: '#bbb' },
+  ];
+  const inputSectionStyle = [
+    styles.inputSection,
+    darkMode && { backgroundColor: '#23272b', shadowColor: '#000' },
+  ];
+  const inputLabelStyle = [
+    styles.inputLabel,
+    darkMode && { color: '#fff' },
+  ];
+  const inputStyle = [
+    styles.input,
+    darkMode && { backgroundColor: '#222', color: '#fff', borderColor: '#444' },
+  ];
+  const analyzeButtonStyle = [
+    styles.analyzeButton,
+    darkMode && { backgroundColor: '#1976d2' },
+  ];
+  const buttonTextStyle = [
+    styles.buttonText,
+    darkMode && { color: '#fff' },
+  ];
+  const resultCardStyle = (type) => [
+    styles.resultCard,
+    styles[type],
+    darkMode && {
+      backgroundColor:
+        type === 'success'
+          ? '#233d2b'
+          : type === 'error'
+          ? '#3d2323'
+          : '#23303d',
+      borderLeftColor:
+        type === 'success'
+          ? '#27ae60'
+          : type === 'error'
+          ? '#e74c3c'
+          : '#2980b9',
+    },
+  ];
+  const resultTextStyle = [
+    styles.resultText,
+    darkMode && { color: '#fff' },
+  ];
+  const sectionTitleStyle = [
+    styles.sectionTitle,
+    darkMode && { color: '#fff' },
+  ];
+  const policyCardStyle = [
+    styles.policyCard,
+    darkMode && { backgroundColor: '#23272b' },
+  ];
+  const policyTitleStyle = [
+    styles.policyTitle,
+    darkMode && { color: '#90caf9' },
+  ];
+  const policyDescStyle = [
+    styles.policyDesc,
+    darkMode && { color: '#bbb' },
+  ];
+  const policyTagStyle = [
+    styles.policyTag,
+    darkMode && { color: '#bbb' },
+  ];
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={containerStyle} contentContainerStyle={{ paddingBottom: 60 }}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <Text style={styles.title}>AI 맞춤 정책 찾기</Text>
-        <Text style={styles.subtitle}>간단한 정보 입력으로 최적의 복지정책을 추천해드려요</Text>
+        <Text style={headerTitleStyle}>AI 맞춤 정책 찾기</Text>
+        <Text style={subtitleStyle}>간단한 정보 입력으로 최적의 복지정책을 추천해드려요</Text>
       </View>
 
       {/* 입력 섹션 */}
-      <View style={styles.inputSection}>
+      <View style={inputSectionStyle}>
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>나이</Text>
+          <Text style={inputLabelStyle}>나이</Text>
           <TextInput
-            style={styles.input}
-            placeholder="만 나이를 입력"
-            keyboardType="numeric"
+            style={inputStyle}
             value={age}
             onChangeText={setAge}
-            placeholderTextColor="#95a5a6"
+            placeholder="나이를 입력하세요"
+            placeholderTextColor={darkMode ? "#bbb" : "#888"}
+            keyboardType="numeric"
           />
         </View>
-        
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>직업현황</Text>
+          <Text style={inputLabelStyle}>직업현황</Text>
           <TextInput
-            style={styles.input}
-            placeholder="예) 학생, 직장인, 프리랜서"
+            style={inputStyle}
             value={job}
             onChangeText={setJob}
-            placeholderTextColor="#95a5a6"
+            placeholder="예) 학생, 구직자, 직장인"
+            placeholderTextColor={darkMode ? "#bbb" : "#888"}
           />
         </View>
+        <TouchableOpacity style={analyzeButtonStyle} onPress={recommendPolicy}>
+          <Text style={buttonTextStyle}>지금 바로 분석하기</Text>
+        </TouchableOpacity>
       </View>
-
-      {/* 분석 버튼 */}
-      <TouchableOpacity 
-        style={styles.analyzeButton} 
-        onPress={recommendPolicy}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.buttonText}>지금 바로 분석하기</Text>
-      </TouchableOpacity>
 
       {/* 결과 표시 */}
       {result.text && (
-        <View style={[styles.resultCard, styles[result.type]]}>
+        <View style={resultCardStyle(result.type)}>
           <Text style={styles.resultIcon}>
-            {result.type === 'success' ? '✅' : result.type === 'error' ? '⚠️' : 'ℹ️'}
+            {result.type === 'success'
+              ? '✅'
+              : result.type === 'error'
+              ? '⚠️'
+              : 'ℹ️'}
           </Text>
-          <Text style={styles.resultText}>{result.text}</Text>
+          <Text style={resultTextStyle}>{result.text}</Text>
         </View>
       )}
 
       {/* 인기 정책 섹션 */}
-      <Text style={styles.sectionTitle}>🔥 인기 정책 모아보기</Text>
+      <Text style={sectionTitleStyle}>🔥 인기 정책 모아보기</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.policyCard}>
-          <Text style={styles.policyTitle}>청년내일저축계좌</Text>
-          <Text style={styles.policyDesc}>월 70만원 적립 시 최대 1,800만원 지원</Text>
-          <Text style={styles.policyTag}>#24~34세 #소득하위80%</Text>
+        <View style={policyCardStyle}>
+          <Text style={policyTitleStyle}>청년내일저축계좌</Text>
+          <Text style={policyDescStyle}>월 70만원 적립 시 최대 1,800만원 지원</Text>
+          <Text style={policyTagStyle}>#24~34세 #소득하위80%</Text>
         </View>
-        <View style={styles.policyCard}>
-          <Text style={styles.policyTitle}>주거안정자금</Text>
-          <Text style={styles.policyDesc}>전세자금 대출 이자 1%p 감면</Text>
-          <Text style={styles.policyTag}>#무주택자 #신혼부부</Text>
+        <View style={policyCardStyle}>
+          <Text style={policyTitleStyle}>주거안정자금</Text>
+          <Text style={policyDescStyle}>전세자금 대출 이자 1%p 감면</Text>
+          <Text style={policyTagStyle}>#무주택자 #신혼부부</Text>
         </View>
       </ScrollView>
     </ScrollView>
@@ -101,6 +177,7 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#f8f9fc',
     paddingBottom: 60,
+    flex: 1,
   },
   header: {
     marginBottom: 32,
@@ -143,6 +220,7 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 16,
     backgroundColor: '#fcfcfc',
+    color: '#222',
   },
   analyzeButton: {
     backgroundColor: '#2980b9',
@@ -194,6 +272,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2c3e50',
     marginBottom: 20,
+    marginTop: 10,
   },
   policyCard: {
     backgroundColor: '#fff',
@@ -221,4 +300,3 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 });
-

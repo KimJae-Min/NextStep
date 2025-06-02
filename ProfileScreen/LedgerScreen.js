@@ -1,4 +1,3 @@
-//가계부
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -10,8 +9,11 @@ import {
   ScrollView,
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
+import { useThemeMode } from './ThemeContext'; // 다크모드 context import
 
 export default function LedgerScreen() {
+  const { darkMode } = useThemeMode(); // 다크모드 상태 사용
+
   const [accountBalance, setAccountBalance] = useState(0);
   const [balanceInput, setBalanceInput] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
@@ -24,10 +26,8 @@ export default function LedgerScreen() {
 
   const handleAddEntry = () => {
     if (!selectedDate || !amount || !description) return;
-
     const parsedAmount = parseInt(amount, 10);
     if (isNaN(parsedAmount)) return;
-
     const newEntry = {
       id: Date.now().toString(),
       date: selectedDate,
@@ -35,12 +35,8 @@ export default function LedgerScreen() {
       description,
       type: parsedAmount >= 0 ? 'income' : 'expense',
     };
-
     setEntries(prev => [...prev, newEntry]);
-
-    // 계좌 잔액 반영
     setAccountBalance(prev => prev + parsedAmount);
-
     setAmount('');
     setDescription('');
   };
@@ -89,13 +85,13 @@ export default function LedgerScreen() {
     markedDates[date] = {
       customStyles: {
         container: {
-          backgroundColor: 'white',
+          backgroundColor: darkMode ? '#333' : 'white',
           alignItems: 'center',
           justifyContent: 'center',
           borderRadius: 20,
           paddingVertical: 5,
         },
-        text: { color: '#000' },
+        text: { color: darkMode ? '#fff' : '#000' },
       },
       income,
       expense,
@@ -120,7 +116,6 @@ export default function LedgerScreen() {
     const dateStr = date.dateString;
     const summary = dateSummary[dateStr] || { income: 0, expense: 0 };
     const isSelected = selectedDate === dateStr;
-
     return (
       <TouchableOpacity
         style={[
@@ -130,7 +125,11 @@ export default function LedgerScreen() {
         ]}
         onPress={() => setSelectedDate(dateStr)}
       >
-        <Text style={[styles.dayText, state === 'disabled' && { color: '#999' }]}>
+        <Text style={[
+          styles.dayText,
+          state === 'disabled' && { color: '#999' },
+          darkMode && { color: '#fff' }
+        ]}>
           {date.day}
         </Text>
         <View style={styles.dotsContainer}>
@@ -154,8 +153,14 @@ export default function LedgerScreen() {
   };
 
   const renderItem = ({ item }) => (
-    <View style={styles.entryItem}>
-      <Text style={styles.entryText}>
+    <View style={[
+      styles.entryItem,
+      darkMode && { backgroundColor: '#222', borderBottomColor: '#444' }
+    ]}>
+      <Text style={[
+        styles.entryText,
+        darkMode && { color: '#fff' }
+      ]}>
         {item.date}: {item.description} - {item.amount.toLocaleString()}원
       </Text>
     </View>
@@ -169,17 +174,75 @@ export default function LedgerScreen() {
     setAmount(filtered);
   };
 
+  // 다크모드 스타일 적용
+  const containerStyle = [
+    styles.container,
+    darkMode && { backgroundColor: '#222' }
+  ];
+  const balanceBoxStyle = [
+    styles.balanceBox,
+    darkMode && { backgroundColor: '#333' }
+  ];
+  const balanceTitleStyle = [
+    styles.balanceTitle,
+    darkMode && { color: '#fff' }
+  ];
+  const balanceValueStyle = [
+    styles.balanceValue,
+    darkMode && { color: '#fff' }
+  ];
+  const balanceInputStyle = [
+    styles.balanceInput,
+    darkMode && { backgroundColor: '#222', color: '#fff', borderColor: '#555' }
+  ];
+  const summaryBoxStyle = [
+    styles.summaryBox,
+    darkMode && { backgroundColor: '#333' }
+  ];
+  const summaryMonthStyle = [
+    styles.summaryMonth,
+    darkMode && { color: '#fff' }
+  ];
+  const summaryLabelStyle = [
+    styles.summaryLabel,
+    darkMode && { color: '#fff' }
+  ];
+  const summaryValueStyle = [
+    styles.summaryValue,
+    darkMode && { color: '#fff' }
+  ];
+  const inputStyle = [
+    styles.input,
+    darkMode && { backgroundColor: '#222', color: '#fff', borderColor: '#555' }
+  ];
+  const hintTextStyle = [
+    styles.hintText,
+    darkMode && { color: '#ffb3b3' }
+  ];
+  const entryListTitleStyle = [
+    styles.entryListTitle,
+    darkMode && { color: '#fff' }
+  ];
+  const buttonStyle = [
+    styles.button,
+    darkMode && { backgroundColor: '#70d7c7' }
+  ];
+  const buttonTextStyle = [
+    styles.buttonText,
+    darkMode && { color: '#222' }
+  ];
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
+    <ScrollView style={containerStyle} contentContainerStyle={{ flexGrow: 1 }}>
       {/* 계좌 잔액 박스 */}
-      <View style={styles.balanceBox}>
-        <Text style={styles.balanceTitle}>현재 계좌 잔액</Text>
-        <Text style={styles.balanceValue}>{accountBalance.toLocaleString()}원</Text>
+      <View style={balanceBoxStyle}>
+        <Text style={balanceTitleStyle}>현재 계좌 잔액</Text>
+        <Text style={balanceValueStyle}>{accountBalance.toLocaleString()}원</Text>
         <View style={styles.balanceInputRow}>
           <TextInput
-            style={styles.balanceInput}
+            style={balanceInputStyle}
             placeholder="잔액 수정"
-            placeholderTextColor="#999"
+            placeholderTextColor={darkMode ? "#bbb" : "#999"}
             keyboardType="numeric"
             value={balanceInput}
             onChangeText={setBalanceInput}
@@ -192,15 +255,15 @@ export default function LedgerScreen() {
 
       {/* 월별 수입/지출 요약 */}
       <View style={styles.summaryBoxContainer}>
-        <View style={styles.summaryBox}>
-          <Text style={styles.summaryMonth}>{getFormattedMonthTitle(selectedMonth)}</Text>
-          <Text style={styles.summaryLabel}>총 수입</Text>
-          <Text style={styles.summaryValue}>{monthlyIncome.toLocaleString()}원</Text>
+        <View style={summaryBoxStyle}>
+          <Text style={summaryMonthStyle}>{getFormattedMonthTitle(selectedMonth)}</Text>
+          <Text style={summaryLabelStyle}>총 수입</Text>
+          <Text style={summaryValueStyle}>{monthlyIncome.toLocaleString()}원</Text>
         </View>
-        <View style={styles.summaryBox}>
-          <Text style={styles.summaryMonth}>{getFormattedMonthTitle(selectedMonth)}</Text>
-          <Text style={styles.summaryLabel}>총 지출</Text>
-          <Text style={styles.summaryValue}>{monthlyExpense.toLocaleString()}원</Text>
+        <View style={summaryBoxStyle}>
+          <Text style={summaryMonthStyle}>{getFormattedMonthTitle(selectedMonth)}</Text>
+          <Text style={summaryLabelStyle}>총 지출</Text>
+          <Text style={summaryValueStyle}>{monthlyExpense.toLocaleString()}원</Text>
         </View>
       </View>
 
@@ -213,33 +276,41 @@ export default function LedgerScreen() {
         markingType={'custom'}
         markedDates={markedDates}
         style={styles.calendar}
+        theme={{
+          backgroundColor: darkMode ? '#222' : '#fff',
+          calendarBackground: darkMode ? '#222' : '#fff',
+          dayTextColor: darkMode ? '#fff' : '#000',
+          textDisabledColor: darkMode ? '#555' : '#999',
+          monthTextColor: darkMode ? '#fff' : '#000',
+          arrowColor: darkMode ? "#fff" : "#000",
+        }}
       />
 
       {/* 입력창 */}
       <View style={styles.inputContainer}>
         <TextInput
-          style={styles.input}
+          style={inputStyle}
           placeholder="수입/지출"
-          placeholderTextColor="#999"
+          placeholderTextColor={darkMode ? "#bbb" : "#999"}
           keyboardType="default"
           value={amount}
           onChangeText={handleAmountChange}
         />
-        <Text style={styles.hintText}>* 지출은 금액 앞에 '-'를 붙여 입력해주세요.</Text>
+        <Text style={hintTextStyle}>* 지출은 금액 앞에 '-'를 붙여 입력해주세요.</Text>
         <TextInput
-          style={styles.input}
+          style={inputStyle}
           placeholder="내용"
-          placeholderTextColor="#999"
+          placeholderTextColor={darkMode ? "#bbb" : "#999"}
           value={description}
           onChangeText={setDescription}
         />
-        <TouchableOpacity style={styles.button} onPress={handleAddEntry}>
-          <Text style={styles.buttonText}>기록</Text>
+        <TouchableOpacity style={buttonStyle} onPress={handleAddEntry}>
+          <Text style={buttonTextStyle}>기록</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.entryListContainer}>
-        <Text style={styles.entryListTitle}>내역</Text>
+        <Text style={entryListTitleStyle}>내역</Text>
         <FlatList
           data={entries.filter((entry) => entry.date === selectedDate)}
           keyExtractor={(item) => item.id}
@@ -270,6 +341,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: '#222',
   },
   balanceValue: {
     fontSize: 20,
@@ -289,6 +361,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginRight: 8,
     color: '#000',
+    backgroundColor: '#fff',
   },
   balanceButton: {
     backgroundColor: '#bbb',
@@ -323,6 +396,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginTop: 2,
+    color: '#222',
   },
   summaryValue: {
     fontSize: 18,
@@ -374,6 +448,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginBottom: 3,
     color: '#000',
+    backgroundColor: '#fff',
   },
   button: {
     backgroundColor: '#EAF3E1',
@@ -393,6 +468,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 8,
+    color: '#222',
   },
   entryItem: {
     padding: 10,
@@ -403,5 +479,6 @@ const styles = StyleSheet.create({
   },
   entryText: {
     fontSize: 15,
+    color: '#222',
   },
 });

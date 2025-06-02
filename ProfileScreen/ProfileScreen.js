@@ -1,4 +1,5 @@
 //회원정보입력
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
@@ -20,7 +21,6 @@ export default function ProfileScreen({ navigation, route }) {
   // 기타 입력값 상태
   const [job, setJob] = useState('');
   const [income, setIncome] = useState('');
-  const [spendingHabit, setSpendingHabit] = useState('');
   const [fixedExpense, setFixedExpense] = useState('');
 
   // 주소 검색 결과 반영
@@ -31,12 +31,11 @@ export default function ProfileScreen({ navigation, route }) {
 
   // 확인 버튼 눌렀을 때 처리
   const onSubmit = () => {
-    if (!address || !job || !income || !spendingHabit || !fixedExpense) {
+    if (!address || !job || !income || !fixedExpense) {
       alert('모든 항목을 입력하세요.');
       return;
     }
 
-    // 입력한 데이터를 객체로 묶음
     const profileData = {
       address,
       detailAddress,
@@ -44,102 +43,79 @@ export default function ProfileScreen({ navigation, route }) {
       job,
       disability,
       income,
-      spendingHabit,
       fixedExpense,
     };
 
-    // 프로필 입력 완료 후 메인화면(Page)으로 이동하며 데이터 전달
     navigation.navigate('Page', { profileData });
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>회원 정보 입력</Text>
-
+      
       {/* 주소 입력 */}
-      <View style={{ width: '100%', marginBottom: 12 }}>
-        <Text>주소</Text>
+      <Text>주소</Text>
+      <TouchableOpacity onPress={() => navigation.navigate('SearchAddress')}>
         <TextInput
           style={styles.input}
           value={address}
-          onChangeText={setAddress}
           placeholder="주소를 입력하세요"
+          editable={false}
         />
-        <TextInput
-          style={styles.input}
-          value={detailAddress}
-          onChangeText={setDetailAddress}
-          placeholder="상세 주소를 입력하세요"
-        />
-        <TouchableOpacity
-          style={[styles.button, { marginTop: 4 }]}
-          onPress={() => navigation.navigate('SearchAddress')}
-        >
-          <Text style={styles.buttonText}>우편번호 찾기</Text>
-        </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
+      <TextInput
+        style={styles.input}
+        value={detailAddress}
+        onChangeText={setDetailAddress}
+        placeholder="상세 주소"
+      />
+      <TextInput
+        style={styles.input}
+        value={zonecode}
+        placeholder="우편번호"
+        editable={false}
+      />
 
       {/* 직업 */}
-      <View style={{ width: '100%', marginBottom: 12 }}>
-        <Text>직업</Text>
-        <TextInput
-          style={styles.input}
-          value={job}
-          onChangeText={setJob}
-          placeholder="직업을 입력하세요"
-        />
-      </View>
+      <Text>직업</Text>
+      <TextInput
+        style={styles.input}
+        value={job}
+        onChangeText={setJob}
+        placeholder="직업을 입력하세요"
+      />
 
       {/* 장애 유무 드롭다운 */}
-      <View style={{ width: '100%', marginBottom: 12, zIndex: 1000 }}>
-        <Text>장애 유무</Text>
-        <DropDownPicker
-          open={disabilityOpen}
-          value={disability}
-          items={disabilityItems}
-          setOpen={setDisabilityOpen}
-          setValue={setDisability}
-          setItems={setDisabilityItems}
-          containerStyle={{ height: 40 }}
-          style={{ backgroundColor: '#fafafa' }}
-          dropDownStyle={{ backgroundColor: '#fafafa' }}
-        />
-      </View>
+      <Text>장애 유무</Text>
+      <DropDownPicker
+        open={disabilityOpen}
+        value={disability}
+        items={disabilityItems}
+        setOpen={setDisabilityOpen}
+        setValue={setDisability}
+        setItems={setDisabilityItems}
+        style={styles.input}
+      />
 
       {/* 소득 */}
-      <View style={{ width: '100%', marginBottom: 12 }}>
-        <Text>소득</Text>
-        <TextInput
-          style={styles.input}
-          value={income}
-          onChangeText={setIncome}
-          placeholder="소득을 입력하세요"
-          keyboardType="numeric"
-        />
-      </View>
-
-      {/* 소비 습관 */}
-      <View style={{ width: '100%', marginBottom: 12 }}>
-        <Text>소비 습관</Text>
-        <TextInput
-          style={styles.input}
-          value={spendingHabit}
-          onChangeText={setSpendingHabit}
-          placeholder="소비 습관을 입력하세요"
-        />
-      </View>
+      <Text>월소득</Text>
+      <TextInput
+        style={styles.input}
+        value={income}
+        onChangeText={setIncome}
+        placeholder="월소득을 입력하세요"
+        keyboardType="numeric"
+      />
 
       {/* 고정 지출 */}
-      <View style={{ width: '100%', marginBottom: 12 }}>
-        <Text>고정 지출</Text>
-        <TextInput
-          style={styles.input}
-          value={fixedExpense}
-          onChangeText={setFixedExpense}
-          placeholder="고정 지출을 입력하세요"
-          keyboardType="numeric"
-        />
-      </View>
+      <Text>고정 지출</Text>
+      <TextInput
+        style={styles.input}
+        value={fixedExpense}
+        onChangeText={setFixedExpense}
+        placeholder="고정 지출을 입력하세요"
+        keyboardType="numeric"
+      />
 
       {/* 확인 버튼 */}
       <TouchableOpacity style={styles.button} onPress={onSubmit}>

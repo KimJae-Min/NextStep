@@ -1,78 +1,110 @@
-//플래너
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+  ScrollView,
+  Platform,
+} from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { LineChart } from 'react-native-chart-kit';
+import { useThemeMode } from './ThemeContext';
 
 const windowWidth = Dimensions.get('window').width;
-const windowHeight = Dimensions.get('window').height;
 
-// 임시 최근 7일 지출 데이터 (단위: 만원)
 const spendingData = [15, 22, 18, 25, 30, 45, 38];
 const spendingLabels = ['월', '화', '수', '목', '금', '토', '일'];
 
 export default function Planner() {
   const navigation = useNavigation();
   const route = useRoute();
+  const { darkMode } = useThemeMode();
   const profileData = route.params?.profileData || {};
 
-  // 위험도 계산 함수
+  // 위험도 계산
   const calculateRisk = () => {
-    const income = parseInt(profileData.income) || 1;
-    const fixed = parseInt(profileData.fixedExpense) || 0;
-    const habit = profileData.spendingHabit || '보통';
-    const fixedRatio = Math.min((fixed / income) * 100, 70);
-    const habitWeight = { '낮음': 10, '보통': 30, '높음': 50 }[habit] || 30;
-    return Math.min(fixedRatio + habitWeight, 100);
+    const income = Number(profileData.income) || 0;
+    const fixed = Number(profileData.fixedExpense) || 0;
+    return income > 0 ? Math.round((fixed / income) * 100) : 0;
   };
   const riskValue = calculateRisk();
 
   // 일평균 지출 및 위험 기준
   const avgSpending = spendingData.reduce((a, b) => a + b, 0) / spendingData.length;
-  const spendingDanger = avgSpending > 25; // 25만원 초과면 위험(임의 기준)
+  const spendingDanger = avgSpending > 25;
 
   // 위험도 설명
   let riskDesc = '';
-  let riskColor = '#2ecc71';
+  let riskColor = darkMode ? '#70d7c7' : '#2ecc71';
   if (riskValue > 70) {
     riskDesc = '위험: 지출이 매우 높아요!';
-    riskColor = '#e74c3c';
+    riskColor = darkMode ? '#ff7675' : '#e74c3c';
   } else if (riskValue > 40) {
     riskDesc = '주의: 지출이 다소 많아요.';
-    riskColor = '#f1c40f';
+    riskColor = darkMode ? '#f1c40f' : '#f1c40f';
   } else {
     riskDesc = '안정: 지출이 적정 수준입니다.';
-    riskColor = '#2ecc71';
+    riskColor = darkMode ? '#70d7c7' : '#2ecc71';
   }
 
-  return (
-    <View style={styles.outer}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <Text style={styles.screenTitle}>지출 플래너</Text>
+  // 스타일
+  const containerStyle = [styles.container, darkMode && { backgroundColor: '#181A20' }];
+  const cardStyle = [styles.card, darkMode && styles.cardDark];
+  const chartCardStyle = [styles.chartCard, darkMode && styles.cardDark];
+  const cardHeaderStyle = styles.cardHeader;
+  const cardIconStyle = styles.cardIcon;
+  const titleStyle = [styles.title, darkMode && { color: '#fff' }];
+  const sectionTitleStyle = [styles.sectionTitle, darkMode && { color: '#fff' }];
+  const textStyle = [styles.text, darkMode && { color: '#bbb' }];
+  const avgTextStyle = [styles.avgText, darkMode && { color: spendingDanger ? '#ff7675' : '#bbb' }];
+  const summaryRowStyle = styles.summaryRow;
+  const summaryCardStyle = [styles.summaryCard, darkMode && styles.cardDark];
+  const summaryLabelStyle = [styles.summaryLabel, darkMode && { color: '#aaa' }];
+  const summaryValueStyle = [styles.summaryValue, darkMode && { color: darkMode ? '#70d7c7' : '#2980b9' }];
+  const summaryCommentStyle = [styles.summaryComment, darkMode && { color: '#aaa' }];
+  const riskCardStyle = [styles.card, styles.riskCard, darkMode && styles.cardDark, { borderColor: riskColor }];
+  const riskDescStyle = [styles.riskDesc, { color: riskColor }];
+  const clickGuideTextStyle = [styles.clickGuideText, darkMode && { color: '#bbb' }];
 
-        {/* 주간 지출 추이 그래프 */}
-        <View style={styles.chartSection}>
-          <Text style={styles.sectionTitle}>📊 주간 지출 추이</Text>
+  return (
+    <View style={containerStyle}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* 타이틀 */}
+        <Text style={titleStyle}>지출 플래너</Text>
+
+        {/* 주간 지출 추이 카드 */}
+        <View style={chartCardStyle}>
+          <View style={cardHeaderStyle}>
+            <Text style={cardIconStyle}>📊</Text>
+            <Text style={sectionTitleStyle}>주간 지출 추이</Text>
+          </View>
           <View style={styles.chartWrapper}>
             <LineChart
               data={{
                 labels: spendingLabels,
                 datasets: [{ data: spendingData }],
               }}
-              width={windowWidth - 64} // 좌우 패딩, 카드 여백 고려 (그래프가 카드 안에 정확히 들어가게)
+              width={windowWidth - 48}
               height={180}
               yAxisSuffix="만"
               chartConfig={{
-                backgroundColor: '#fff',
-                backgroundGradientFrom: '#fff',
-                backgroundGradientTo: '#fff',
+                backgroundColor: darkMode ? '#292B36' : '#fff',
+                backgroundGradientFrom: darkMode ? '#292B36' : '#fff',
+                backgroundGradientTo: darkMode ? '#181A20' : '#fff',
                 decimalPlaces: 0,
-                color: (opacity = 1) => spendingDanger ? `rgba(231,76,60,${opacity})` : `rgba(41,128,185,${opacity})`,
-                labelColor: () => '#7f8c8d',
+                color: (opacity = 1) =>
+                  spendingDanger
+                    ? `rgba(231,76,60,${opacity})`
+                    : darkMode
+                    ? `rgba(112,215,199,${opacity})`
+                    : `rgba(41,128,185,${opacity})`,
+                labelColor: (opacity = 1) => (darkMode ? '#bbb' : '#7f8c8d'),
                 propsForDots: {
                   r: '6',
                   strokeWidth: '2',
-                  stroke: spendingDanger ? '#e74c3c' : '#2980b9',
+                  stroke: spendingDanger ? '#e74c3c' : darkMode ? '#70d7c7' : '#2980b9',
                 },
               }}
               bezier
@@ -82,56 +114,39 @@ export default function Planner() {
               fromZero
             />
           </View>
-          <Text style={[
-            styles.avgText,
-            { color: spendingDanger ? '#e74c3c' : '#2980b9' }
-          ]}>
+          <Text style={avgTextStyle}>
             최근 일평균 지출: {avgSpending.toLocaleString()}만원
             {spendingDanger ? ' (위험: 지출이 많아요!)' : ' (안정)'}
           </Text>
         </View>
 
-        {/* 일일/월간 지출 현황을 한 줄에 */}
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryIcon}>💰</Text>
-            <Text style={styles.summaryLabel}>일일 지출</Text>
-            <Text style={styles.summaryValue}>150,000원</Text>
-            <Text style={styles.summaryComment}>어제 대비 +12%</Text>
+        {/* 일일/월간 지출 카드 */}
+        <View style={summaryRowStyle}>
+          <View style={summaryCardStyle}>
+            <Text style={summaryLabelStyle}>일일 지출</Text>
+            <Text style={summaryValueStyle}>150,000원</Text>
+            <Text style={summaryCommentStyle}>어제 대비 +12%</Text>
           </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryIcon}>📅</Text>
-            <Text style={styles.summaryLabel}>월간 지출</Text>
-            <Text style={styles.summaryValue}>4,500,000원</Text>
-            <Text style={styles.summaryComment}>예산 대비 23% 초과</Text>
+          <View style={summaryCardStyle}>
+            <Text style={summaryLabelStyle}>월간 지출</Text>
+            <Text style={summaryValueStyle}>4,500,000원</Text>
+            <Text style={summaryCommentStyle}>예산 대비 23% 초과</Text>
           </View>
         </View>
 
-        {/* 위험도 분석 카드 (터치 시 바로 이동) */}
+        {/* 위험도 분석 카드 */}
         <TouchableOpacity
-          style={[styles.sectionCard, styles.riskCard]}
-          activeOpacity={0.85}
+          style={riskCardStyle}
           onPress={() => navigation.navigate('Risk', { riskValue })}
+          activeOpacity={0.85}
         >
-          <Text style={styles.sectionTitle}>🛡️ 지출 위험도 분석</Text>
-          {/* 위험도 게이지 */}
-          <View style={styles.gaugeContainer}>
-            <View style={styles.gaugeBackground}>
-              <View
-                style={[
-                  styles.gaugeFill,
-                  { width: `${riskValue}%`, backgroundColor: riskColor },
-                ]}
-              />
-            </View>
-            <Text style={[styles.gaugeText, { color: riskColor }]}>
-              현재 위험도: {riskValue}%
-            </Text>
-            <Text style={[styles.riskDesc, { color: riskColor }]}>
-              {riskDesc}
-            </Text>
+          <View style={cardHeaderStyle}>
+            <Text style={cardIconStyle}>🛡️</Text>
+            <Text style={sectionTitleStyle}>지출 위험도 분석</Text>
           </View>
-          <Text style={styles.clickGuideText}>터치하면 상세 분석 화면으로 이동</Text>
+          <Text style={styles.gaugeText}>현재 위험도: {riskValue}%</Text>
+          <Text style={riskDescStyle}>{riskDesc}</Text>
+          <Text style={clickGuideTextStyle}>터치하면 상세 분석 화면으로 이동</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -139,63 +154,97 @@ export default function Planner() {
 }
 
 const styles = StyleSheet.create({
-  outer: {
-    flex: 1,
-    backgroundColor: '#e8f0e1',
-  },
   container: {
-    padding: 16,
-    paddingBottom: 36,
-    minHeight: windowHeight - 80,
+    flex: 1,
+    paddingTop: Platform.OS === 'ios' ? 56 : 30,
+    paddingHorizontal: 16,
+    backgroundColor: '#F4F7FA',
   },
-  screenTitle: {
-    fontSize: 28,
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 18,
+    marginBottom: 18,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+  },
+  cardDark: {
+    backgroundColor: '#23262F',
+    shadowColor: '#000',
+  },
+  chartCard: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 18,
+    marginBottom: 18,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 6,
+  },
+  cardIcon: {
+    fontSize: 22,
+    marginRight: 7,
+  },
+  title: {
+    fontSize: 25,
     fontWeight: 'bold',
-    marginVertical: 16,
     color: '#215b36',
     textAlign: 'center',
     letterSpacing: 1,
-  },
-  chartSection: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 16,
     marginBottom: 18,
-    elevation: 3,
-  },
-  chartWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#2c3e50',
-    marginBottom: 12,
+    marginBottom: 0,
+  },
+  text: {
+    fontSize: 17,
+    color: '#555',
+    marginTop: 4,
   },
   avgText: {
     fontSize: 16,
     fontWeight: '600',
-    marginTop: 10,
+    marginTop: 12,
+    marginBottom: 0,
+  },
+  chartWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    marginBottom: 8,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 18,
+    gap: 10,
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     elevation: 2,
-    marginHorizontal: 4,
-  },
-  summaryIcon: {
-    fontSize: 32,
-    marginBottom: 8,
+    marginHorizontal: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
   },
   summaryLabel: {
     fontSize: 14,
@@ -213,44 +262,16 @@ const styles = StyleSheet.create({
     color: '#95a5a6',
     fontStyle: 'italic',
   },
-  sectionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 24,
-    marginBottom: 18,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10,
-    shadowRadius: 8,
-    alignItems: 'center',
-  },
   riskCard: {
     borderWidth: 2,
     borderColor: '#b6e2c7',
-    backgroundColor: '#f6fff7',
-  },
-  gaugeContainer: {
-    marginTop: 10,
-    width: '100%',
-    alignItems: 'center',
-  },
-  gaugeBackground: {
-    width: '100%',
-    height: 22,
-    backgroundColor: '#ecf0f1',
-    borderRadius: 11,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  gaugeFill: {
-    height: '100%',
-    borderRadius: 11,
+    marginBottom: 18,
   },
   gaugeText: {
     marginTop: 10,
     fontSize: 17,
     fontWeight: '600',
+    color: '#888',
   },
   riskDesc: {
     marginTop: 4,
