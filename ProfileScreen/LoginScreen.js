@@ -1,27 +1,32 @@
-//로그인화면
-
 import React, { useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { useThemeMode } from './ThemeContext';
+import { useUser } from './UserContext';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { darkMode } = useThemeMode();
+  const { login } = useUser();
 
   const onLogin = () => {
     if (!email || !password) {
       Alert.alert('오류', 'ID과 비밀번호를 모두 입력하세요.');
       return;
     }
-    navigation.navigate('Profile'); // 로그인 시 프로필 입력 화면으로 이동
+    const success = login(email, password);
+    if (success) {
+      navigation.navigate('Profile');
+    } else {
+      Alert.alert('로그인 실패', '이메일 또는 비밀번호가 일치하지 않습니다.');
+    }
   };
 
   const onSignup = () => {
     navigation.navigate('SignUp');
   };
 
-  // 다크모드 스타일
   const containerStyle = [styles.container, darkMode && { backgroundColor: '#181A20' }];
   const titleStyle = [styles.title, darkMode && { color: '#fff' }];
   const inputStyle = [
@@ -38,13 +43,13 @@ export default function LoginScreen({ navigation }) {
   const signupTextStyle = [styles.signupText, darkMode && { color: '#70d7c7' }];
 
   return (
-    <View style={containerStyle}>
+    <SafeAreaView style={containerStyle} edges={['top', 'left', 'right', 'bottom']}>
       <Text style={titleStyle}>로그인</Text>
       <TextInput
         style={inputStyle}
         value={email}
         onChangeText={setEmail}
-        placeholder="이메일"
+        placeholder="아이디"
         placeholderTextColor={darkMode ? '#bbb' : '#888'}
         autoCapitalize="none"
         keyboardType="email-address"
@@ -63,7 +68,7 @@ export default function LoginScreen({ navigation }) {
       <TouchableOpacity style={signupButtonStyle} onPress={onSignup} activeOpacity={0.8}>
         <Text style={signupTextStyle}>회원가입</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 

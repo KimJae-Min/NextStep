@@ -19,6 +19,7 @@
     "@shopify/react-native-skia": "^2.0.0",
     "@thewoowon/react-native-daum-postcode": "^1.1.3",
     "expo": "~53.0.7",
+    "expo-checkbox": "^4.1.4",
     "expo-status-bar": "~2.2.3",
     "react": "19.0.0",
     "react-dom": "19.0.0",
