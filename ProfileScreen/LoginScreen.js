@@ -8,16 +8,23 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { darkMode } = useThemeMode();
-  const { login } = useUser();
+  const { login, user } = useUser();
 
   const onLogin = () => {
     if (!email || !password) {
       Alert.alert('오류', 'ID과 비밀번호를 모두 입력하세요.');
       return;
     }
-    const success = login(email, password);
-    if (success) {
-      navigation.navigate('Profile');
+    const loggedInUser = login(email, password);
+    if (loggedInUser) {
+      // 로그인 성공 시 사용자 정보에서 프로필 완료 상태 확인
+      if (loggedInUser.profileComplete) {
+        // 이미 프로필을 입력한 사용자는 바로 Page로 이동
+        navigation.navigate('Page');
+      } else {
+        // 프로필을 입력하지 않은 사용자는 Profile 화면으로 이동
+        navigation.navigate('Profile');
+      }
     } else {
       Alert.alert('로그인 실패', '이메일 또는 비밀번호가 일치하지 않습니다.');
     }
@@ -74,7 +81,7 @@ export default function LoginScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FBFAFB', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 24, color: '#222' },
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 32, color: '#222' },
   input: {
     width: '100%',
     height: 48,

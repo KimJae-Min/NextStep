@@ -9,6 +9,7 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeMode } from './ThemeContext';
 import { useUser } from './UserContext';
 
@@ -46,17 +47,25 @@ export default function MyPageScreen({ navigation }) {
     }
   };
 
+  // 프로필 데이터에서 주소 정보 가져오기
+  const profileData = user?.profileData || {};
+  const fullAddress = profileData.address ? 
+    (profileData.detailAddress ? 
+      `${profileData.address} ${profileData.detailAddress}` : 
+      profileData.address) : 
+    '';
+
   // 프로필 정보 필드 정의
   const fields = [
-    { key: 'name', label: '이름', icon: '👤' },
-    { key: 'birth', label: '생년월일', icon: '🎂' },
-    { key: 'phone', label: '전화번호', icon: '📱' },
-    { key: 'email', label: '이메일', icon: '✉️' },
-    { key: 'address', label: '주소', icon: '🏠' },
+    { key: 'name', label: '이름', icon: '👤', value: user.name || '정보 없음' },
+    { key: 'birth', label: '생년월일', icon: '🎂', value: user.birth || '정보 없음' },
+    { key: 'phone', label: '전화번호', icon: '📱', value: user.phone || '정보 없음' },
+    { key: 'email', label: '이메일', icon: '✉️', value: user.email || '정보 없음' },
+    { key: 'address', label: '주소', icon: '🏠', value: fullAddress || '정보 없음' },
   ];
 
   return (
-    <View style={containerStyle}>
+    <SafeAreaView style={containerStyle} edges={['top', 'left', 'right', 'bottom']}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* 헤더 */}
         <View style={styles.header}>
@@ -66,11 +75,20 @@ export default function MyPageScreen({ navigation }) {
         {/* 프로필 카드 */}
         <View style={cardStyle}>
           <View style={styles.profileIconRow}>
-            <Text style={styles.profileIcon}>🧑</Text>
+            <Text style={styles.profileIcon}></Text>
             <Text style={styles.profileName}>{user.name || '이름 없음'}</Text>
           </View>
           <Text style={styles.profileEmail}>{user.email || '이메일 없음'}</Text>
         </View>
+
+        {/* 프로필 정보 전체 수정 버튼 */}
+        <TouchableOpacity 
+          style={[styles.profileEditButton, darkMode && { backgroundColor: '#2980b9' }]}
+          onPress={() => navigation.navigate('Profile')}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.profileEditButtonText, darkMode && { color: '#fff' }]}>프로필 정보 수정</Text>
+        </TouchableOpacity>
 
         {/* 정보 수정 카드 */}
         <View style={cardStyle}>
@@ -82,10 +100,17 @@ export default function MyPageScreen({ navigation }) {
                 <Text style={infoLabelStyle}>{field.label}</Text>
               </View>
               <View style={styles.infoRight}>
-                <Text style={infoValueStyle}>{user[field.key] || '정보 없음'}</Text>
+                <Text style={infoValueStyle}>{field.value}</Text>
                 <TouchableOpacity
                   style={editButtonStyle}
-                  onPress={() => startEdit(field.key, user[field.key] || '')}
+                  onPress={() => {
+                    // 주소는 프로필스크린에서 수정해야 함
+                    if (field.key === 'address') {
+                      navigation.navigate('Profile');
+                      return;
+                    }
+                    startEdit(field.key, user[field.key] || '');
+                  }}
                   activeOpacity={0.8}
                 >
                   <Text style={editButtonTextStyle}>수정</Text>
@@ -123,12 +148,30 @@ export default function MyPageScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, paddingTop: Platform.OS === 'ios' ? 56 : 30, backgroundColor: '#F4F7FA' },
+  container: { flex: 1, padding: 20, backgroundColor: '#F4F7FA' },
+  profileEditButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginVertical: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  profileEditButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   header: { marginBottom: 18, alignItems: 'center' },
   headerTitle: { fontSize: 25, fontWeight: 'bold', color: '#215b36', letterSpacing: 1 },
   card: {

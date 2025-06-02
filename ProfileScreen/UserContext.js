@@ -20,15 +20,29 @@ export function UserProvider({ children }) {
     const found = users.find(u => u.email === email && u.password === password);
     if (found) {
       setUser(found);
-      return true;
+      return found; // 사용자 정보 반환
     }
-    return false;
+    return null; // 로그인 실패
+  };
+  
+  // 프로필 완료 상태 업데이트
+  const updateProfileComplete = (profileData) => {
+    // 현재 로그인한 사용자의 프로필 정보 업데이트
+    if (user) {
+      const updatedUser = { ...user, profileComplete: true, profileData };
+      setUser(updatedUser);
+      
+      // users 배열에서도 해당 사용자 정보 업데이트
+      setUsers(prev => prev.map(u => 
+        u.email === user.email ? updatedUser : u
+      ));
+    }
   };
 
   const logout = () => setUser(null);
 
   return (
-    <UserContext.Provider value={{ user, users, register, login, logout }}>
+    <UserContext.Provider value={{ user, users, register, login, logout, updateProfileComplete }}>
       {children}
     </UserContext.Provider>
   );

@@ -4,15 +4,15 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
   StyleSheet,
+  SafeAreaView,
   ScrollView,
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { useThemeMode } from './ThemeContext'; // 다크모드 context import
+import { useThemeMode } from './ThemeContext';
 
 export default function LedgerScreen() {
-  const { darkMode } = useThemeMode(); // 다크모드 상태 사용
+  const { darkMode } = useThemeMode();
 
   const [accountBalance, setAccountBalance] = useState(0);
   const [balanceInput, setBalanceInput] = useState('');
@@ -166,81 +166,36 @@ export default function LedgerScreen() {
     </View>
   );
 
+  // -와 숫자만 허용, 맨 앞에만 - 허용
   const handleAmountChange = (text) => {
     let filtered = text.replace(/[^0-9\-]/g, '');
-    if (filtered.includes('-')) {
-      filtered = '-' + filtered.replace(/-/g, '');
+    if (filtered.startsWith('-')) {
+      filtered = '-' + filtered.slice(1).replace(/-/g, '');
+    } else {
+      filtered = filtered.replace(/-/g, '');
     }
     setAmount(filtered);
   };
 
-  // 다크모드 스타일 적용
+  // 스타일 배열
   const containerStyle = [
     styles.container,
-    darkMode && { backgroundColor: '#222' }
-  ];
-  const balanceBoxStyle = [
-    styles.balanceBox,
-    darkMode && { backgroundColor: '#333' }
-  ];
-  const balanceTitleStyle = [
-    styles.balanceTitle,
-    darkMode && { color: '#fff' }
-  ];
-  const balanceValueStyle = [
-    styles.balanceValue,
-    darkMode && { color: '#fff' }
-  ];
-  const balanceInputStyle = [
-    styles.balanceInput,
-    darkMode && { backgroundColor: '#222', color: '#fff', borderColor: '#555' }
-  ];
-  const summaryBoxStyle = [
-    styles.summaryBox,
-    darkMode && { backgroundColor: '#333' }
-  ];
-  const summaryMonthStyle = [
-    styles.summaryMonth,
-    darkMode && { color: '#fff' }
-  ];
-  const summaryLabelStyle = [
-    styles.summaryLabel,
-    darkMode && { color: '#fff' }
-  ];
-  const summaryValueStyle = [
-    styles.summaryValue,
-    darkMode && { color: '#fff' }
-  ];
-  const inputStyle = [
-    styles.input,
-    darkMode && { backgroundColor: '#222', color: '#fff', borderColor: '#555' }
-  ];
-  const hintTextStyle = [
-    styles.hintText,
-    darkMode && { color: '#ffb3b3' }
-  ];
-  const entryListTitleStyle = [
-    styles.entryListTitle,
-    darkMode && { color: '#fff' }
-  ];
-  const buttonStyle = [
-    styles.button,
-    darkMode && { backgroundColor: '#70d7c7' }
-  ];
-  const buttonTextStyle = [
-    styles.buttonText,
-    darkMode && { color: '#222' }
+    darkMode && { backgroundColor: '#181A20' }
   ];
 
+  // 선택된 날짜의 내역만 필터링
+  const filteredEntries = entries.filter((entry) => entry.date === selectedDate);
+
   return (
-    <ScrollView style={containerStyle} contentContainerStyle={{ flexGrow: 1 }}>
-      {/* 계좌 잔액 박스 */}
-      <View style={balanceBoxStyle}>
-        <Text style={balanceTitleStyle}>현재 계좌 잔액</Text>
-        <Text style={balanceValueStyle}>{accountBalance.toLocaleString()}원</Text>
+    <SafeAreaView style={[containerStyle, {flex: 1}]}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+      {/* 계좌 잔액 카드 */}
+      <View style={[styles.card, styles.balanceCard, darkMode && styles.cardDark]}>
+        <Text style={[styles.cardTitle, darkMode && { color: '#70d7c7' }]}>현재 계좌 잔액</Text>
+        <Text style={[styles.balanceValue, darkMode && { color: '#fff' }]}>{accountBalance.toLocaleString()}원</Text>
         <View style={styles.balanceInputRow}>
           <TextInput
-            style={balanceInputStyle}
+            style={[styles.balanceInput, darkMode && { backgroundColor: '#222', color: '#fff', borderColor: '#555' }]}
             placeholder="잔액 수정"
             placeholderTextColor={darkMode ? "#bbb" : "#999"}
             keyboardType="numeric"
@@ -253,108 +208,122 @@ export default function LedgerScreen() {
         </View>
       </View>
 
-      {/* 월별 수입/지출 요약 */}
-      <View style={styles.summaryBoxContainer}>
-        <View style={summaryBoxStyle}>
-          <Text style={summaryMonthStyle}>{getFormattedMonthTitle(selectedMonth)}</Text>
-          <Text style={summaryLabelStyle}>총 수입</Text>
-          <Text style={summaryValueStyle}>{monthlyIncome.toLocaleString()}원</Text>
+      {/* 월별 요약 카드 */}
+      <View style={styles.summaryRow}>
+        <View style={[styles.card, styles.summaryCard, darkMode && styles.cardDark]}>
+          <Text style={[styles.summaryTitle, darkMode && { color: '#fff' }]}>총 수입</Text>
+          <Text style={[styles.summaryValue, darkMode && { color: '#70d7c7' }]}>{monthlyIncome.toLocaleString()}원</Text>
         </View>
-        <View style={summaryBoxStyle}>
-          <Text style={summaryMonthStyle}>{getFormattedMonthTitle(selectedMonth)}</Text>
-          <Text style={summaryLabelStyle}>총 지출</Text>
-          <Text style={summaryValueStyle}>{monthlyExpense.toLocaleString()}원</Text>
+        <View style={[styles.card, styles.summaryCard, darkMode && styles.cardDark]}>
+          <Text style={[styles.summaryTitle, darkMode && { color: '#fff' }]}>총 지출</Text>
+          <Text style={[styles.summaryValue, darkMode && { color: '#e74c3c' }]}>{monthlyExpense.toLocaleString()}원</Text>
         </View>
       </View>
 
-      <Calendar
-        onDayPress={(day) => setSelectedDate(day.dateString)}
-        onMonthChange={(month) =>
-          setSelectedMonth(`${month.year}-${String(month.month).padStart(2, '0')}`)
-        }
-        dayComponent={renderDay}
-        markingType={'custom'}
-        markedDates={markedDates}
-        style={styles.calendar}
-        theme={{
-          backgroundColor: darkMode ? '#222' : '#fff',
-          calendarBackground: darkMode ? '#222' : '#fff',
-          dayTextColor: darkMode ? '#fff' : '#000',
-          textDisabledColor: darkMode ? '#555' : '#999',
-          monthTextColor: darkMode ? '#fff' : '#000',
-          arrowColor: darkMode ? "#fff" : "#000",
-        }}
-      />
+      {/* 캘린더 카드 */}
+      <View style={[styles.card, styles.calendarCard, darkMode && styles.cardDark]}>
+        <Calendar
+          onDayPress={(day) => setSelectedDate(day.dateString)}
+          onMonthChange={(month) =>
+            setSelectedMonth(`${month.year}-${String(month.month).padStart(2, '0')}`)
+          }
+          dayComponent={renderDay}
+          markingType={'custom'}
+          markedDates={markedDates}
+          style={styles.calendar}
+          theme={{
+            backgroundColor: darkMode ? '#222' : '#fff',
+            calendarBackground: darkMode ? '#222' : '#fff',
+            dayTextColor: darkMode ? '#fff' : '#000',
+            textDisabledColor: darkMode ? '#555' : '#999',
+            monthTextColor: darkMode ? '#fff' : '#000',
+            arrowColor: darkMode ? "#fff" : "#000",
+          }}
+        />
+      </View>
 
-      {/* 입력창 */}
-      <View style={styles.inputContainer}>
+      {/* 입력 카드 */}
+      <View style={[styles.card, styles.inputCard, darkMode && styles.cardDark]}>
+        <Text style={[styles.cardTitle, darkMode && { color: '#70d7c7' }]}>내역 입력</Text>
         <TextInput
-          style={inputStyle}
-          placeholder="수입/지출"
+          style={[styles.input, darkMode && { backgroundColor: '#222', color: '#fff', borderColor: '#555' }]}
+          placeholder="수입/지출 금액"
           placeholderTextColor={darkMode ? "#bbb" : "#999"}
           keyboardType="default"
           value={amount}
           onChangeText={handleAmountChange}
         />
-        <Text style={hintTextStyle}>* 지출은 금액 앞에 '-'를 붙여 입력해주세요.</Text>
+        <Text style={[styles.hintText, darkMode && { color: '#ffb3b3' }]}>* 지출은 금액 앞에 '-'를 붙여 입력</Text>
         <TextInput
-          style={inputStyle}
+          style={[styles.input, darkMode && { backgroundColor: '#222', color: '#fff', borderColor: '#555' }]}
           placeholder="내용"
           placeholderTextColor={darkMode ? "#bbb" : "#999"}
           value={description}
           onChangeText={setDescription}
         />
-        <TouchableOpacity style={buttonStyle} onPress={handleAddEntry}>
-          <Text style={buttonTextStyle}>기록</Text>
+        <TouchableOpacity style={[styles.button, darkMode && { backgroundColor: '#70d7c7' }]} onPress={handleAddEntry}>
+          <Text style={[styles.buttonText, darkMode && { color: '#222' }]}>기록</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.entryListContainer}>
-        <Text style={entryListTitleStyle}>내역</Text>
-        <FlatList
-          data={entries.filter((entry) => entry.date === selectedDate)}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 30 }}
-          nestedScrollEnabled={true}
-        />
+      {/* 내역 리스트 카드 */}
+      <View style={[styles.card, styles.entryListCard, darkMode && styles.cardDark]}>
+        <Text style={[styles.entryListTitle, darkMode && { color: '#fff' }]}>내역</Text>
+        {filteredEntries.length > 0 ? (
+          filteredEntries.map(item => (
+            <View 
+              key={item.id}
+              style={[
+                styles.entryItem,
+                darkMode && { backgroundColor: '#222', borderBottomColor: '#444' }
+              ]}
+            >
+              <Text style={[
+                styles.entryText,
+                darkMode && { color: '#fff' }
+              ]}>
+                {item.date}: {item.description} - {item.amount.toLocaleString()}원
+              </Text>
+            </View>
+          ))
+        ) : (
+          <Text style={[styles.noDataText, darkMode && { color: '#aaa' }]}>내역이 없습니다</Text>
+        )}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 16,
+    backgroundColor: '#F4F7FA',
+    paddingTop: 32,
+    paddingBottom: 32,
+  },
+  card: {
     backgroundColor: '#fff',
-    paddingTop: 50,
+    borderRadius: 14,
+    padding: 18,
+    marginBottom: 18,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
   },
-  balanceBox: {
-    backgroundColor: '#EAF3E1',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 12,
-    alignItems: 'center',
+  cardDark: {
+    backgroundColor: '#23262F',
+    shadowColor: '#000',
   },
-  balanceTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    color: '#222',
-  },
-  balanceValue: {
-    fontSize: 20,
-    color: '#000',
-    marginBottom: 8,
-  },
-  balanceInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  balanceCard: { alignItems: 'center' },
+  balanceValue: { fontSize: 24, fontWeight: 'bold', color: '#222', marginBottom: 8 },
+  balanceInputRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
   balanceInput: {
     flex: 1,
-    height: 35,
+    height: 38,
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 8,
@@ -364,121 +333,53 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   balanceButton: {
-    backgroundColor: '#bbb',
-    paddingHorizontal: 12,
+    backgroundColor: '#2980b9',
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
   },
-  balanceButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  summaryBoxContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 3,
-  },
-  summaryBox: {
-    flex: 1,
-    backgroundColor: '#EAF3E1',
-    padding: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 7,
-  },
-  summaryMonth: {
-    fontSize: 14,
-    color: '#000',
-    fontWeight: 'bold',
-  },
-  summaryLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 2,
-    color: '#222',
-  },
-  summaryValue: {
-    fontSize: 18,
-    color: '#000',
-    marginTop: 2,
-  },
-  calendar: {
-    marginBottom: 0,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  dayContainer: {
-    width: 40,
-    height: 35,
-    alignItems: 'center',
-  },
-  selectedDayContainer: {
-    backgroundColor: '#EAF3E1',
-    borderRadius: 20,
-  },
-  dayText: {
-    fontSize: 12,
-    color: '#000',
-  },
-  dotsContainer: {
-    flexDirection: 'row',
-    marginTop: 0,
-  },
-  dot: {
-    width: 5,
-    height: 6,
-    borderRadius: 3,
-    marginHorizontal: 1,
-  },
-  inputContainer: {
-    marginBottom: 10,
-  },
-  hintText: {
-    color: 'red',
-    marginBottom: 4,
-    fontSize: 10,
-    paddingLeft: 4,
-  },
+  balanceButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 18, gap: 10 },
+  summaryCard: { flex: 1, alignItems: 'center', paddingVertical: 18, marginBottom: 0 },
+  summaryTitle: { fontSize: 16, fontWeight: 'bold', color: '#222', marginBottom: 4 },
+  summaryValue: { fontSize: 20, fontWeight: 'bold', color: '#2980b9' },
+  calendarCard: { padding: 0 },
+  calendar: { borderRadius: 10, overflow: 'hidden', alignSelf: 'center' },
+  dayContainer: { width: 40, height: 35, alignItems: 'center' },
+  selectedDayContainer: { backgroundColor: '#EAF3E1', borderRadius: 20 },
+  dayText: { fontSize: 12, color: '#000' },
+  dotsContainer: { flexDirection: 'row', marginTop: 0 },
+  dot: { width: 5, height: 6, borderRadius: 3, marginHorizontal: 1 },
+  inputCard: {},
+  cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#2980b9', marginBottom: 8 },
   input: {
-    height: 35,
+    height: 38,
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
-    marginBottom: 3,
-    color: '#000',
-    backgroundColor: '#fff',
-  },
-  button: {
-    backgroundColor: '#EAF3E1',
-    padding: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#445441',
-    fontWeight: 'bold',
-  },
-  entryListContainer: {
-    maxHeight: 300,
-    marginTop: 10,
-  },
-  entryListTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
     marginBottom: 8,
     color: '#222',
+    backgroundColor: '#fff',
+    fontSize: 16,
   },
+  hintText: { color: 'red', marginBottom: 4, fontSize: 11, paddingLeft: 4 },
+  button: { backgroundColor: '#2980b9', padding: 10, borderRadius: 8, alignItems: 'center', marginTop: 8 },
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  entryListCard: { paddingBottom: 8 },
+  entryListTitle: { fontSize: 17, fontWeight: 'bold', marginBottom: 10, color: '#222' },
   entryItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    borderRadius: 8,
-    backgroundColor: '#fafafa',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingVertical: 13,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    borderColor: '#eee',
+    borderWidth: 1,
+    elevation: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  entryText: {
-    fontSize: 15,
-    color: '#222',
-  },
+  entryText: { fontSize: 15, color: '#222', flex: 1 },
+  noDataText: { fontSize: 14, color: '#888', textAlign: 'center', paddingVertical: 15 },
 });

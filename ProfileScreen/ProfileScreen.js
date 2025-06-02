@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Platform, KeyboardAvoidingView, Alert } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
+import { useThemeMode } from './ThemeContext';
+import { useUser } from './UserContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProfileScreen({ navigation, route }) {
+  const { darkMode } = useThemeMode();
+  const { updateProfileComplete } = useUser();
   // 주소 관련 상태
   const [zonecode, setZonecode] = useState('');
   const [address, setAddress] = useState('');
@@ -43,56 +48,75 @@ export default function ProfileScreen({ navigation, route }) {
       income,
       fixedExpense,
     };
+    
+    // 프로필 완료 상태 업데이트
+    updateProfileComplete(profileData);
 
     navigation.navigate('Page', { profileData });
   };
 
+  // 다크모드에 따른 스타일 적용
+  const containerStyle = [{ flex: 1, backgroundColor: darkMode ? '#181A20' : '#FBFAFB' }];
+  const scrollViewStyle = [styles.container, darkMode && { backgroundColor: '#181A20' }];
+  const titleStyle = [styles.title, darkMode && { color: '#fff' }];
+  const labelStyle = [styles.label, darkMode && { color: '#bbb' }];
+  const inputStyle = [styles.input, darkMode && { backgroundColor: '#23262F', color: '#fff', borderColor: '#444' }];
+  const buttonStyle = [styles.button, darkMode && { backgroundColor: '#2980b9' }];
+  const buttonTextStyle = [styles.buttonText, darkMode && { color: '#fff' }];
+  const dropdownStyle = [styles.input, darkMode && { backgroundColor: '#23262F', color: '#fff', borderColor: '#444' }];
+  const dropdownContainerStyle = { backgroundColor: darkMode ? '#23262F' : '#fff', borderColor: darkMode ? '#444' : '#ccc' };
+
   return (
+    <SafeAreaView style={{ flex: 1 }}>
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#FBFAFB' }}
+      style={containerStyle}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        contentContainerStyle={styles.container}
+        contentContainerStyle={scrollViewStyle}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.title}>회원 정보 입력</Text>
+        <Text style={titleStyle}>회원 정보 입력</Text>
         
         {/* 주소 입력 */}
-        <Text style={styles.label}>주소</Text>
+        <Text style={labelStyle}>주소</Text>
         <TouchableOpacity onPress={() => navigation.navigate('SearchAddress')}>
           <TextInput
-            style={styles.input}
+            style={inputStyle}
             value={address}
             placeholder="주소를 입력하세요"
+            placeholderTextColor={darkMode ? '#bbb' : '#888'}
             editable={false}
             pointerEvents="none"
           />
         </TouchableOpacity>
         <TextInput
-          style={styles.input}
+          style={inputStyle}
           value={detailAddress}
           onChangeText={setDetailAddress}
           placeholder="상세 주소"
+          placeholderTextColor={darkMode ? '#bbb' : '#888'}
         />
         <TextInput
-          style={styles.input}
+          style={inputStyle}
           value={zonecode}
           placeholder="우편번호"
+          placeholderTextColor={darkMode ? '#bbb' : '#888'}
           editable={false}
         />
 
         {/* 직업 */}
-        <Text style={styles.label}>직업</Text>
+        <Text style={labelStyle}>직업</Text>
         <TextInput
-          style={styles.input}
+          style={inputStyle}
           value={job}
           onChangeText={setJob}
           placeholder="직업을 입력하세요"
+          placeholderTextColor={darkMode ? '#bbb' : '#888'}
         />
 
         {/* 장애 유무 드롭다운 */}
-        <Text style={styles.label}>장애 유무</Text>
+        <Text style={labelStyle}>장애 유무</Text>
         <View style={styles.dropdownContainer}>
           <DropDownPicker
             open={disabilityOpen}
@@ -101,8 +125,10 @@ export default function ProfileScreen({ navigation, route }) {
             setOpen={setDisabilityOpen}
             setValue={setDisability}
             setItems={setDisabilityItems}
-            style={styles.input}
-            dropDownContainerStyle={{ zIndex: 1000 }}
+            style={dropdownStyle}
+            dropDownContainerStyle={{ ...dropdownContainerStyle, zIndex: 1000 }}
+            textStyle={{ color: darkMode ? '#fff' : '#222' }}
+            placeholderStyle={{ color: darkMode ? '#bbb' : '#888' }}
             zIndex={1000}
             zIndexInverse={1000}
             listMode="MODAL"
@@ -110,31 +136,34 @@ export default function ProfileScreen({ navigation, route }) {
         </View>
 
         {/* 월소득 */}
-        <Text style={styles.label}>월소득</Text>
+        <Text style={labelStyle}>월소득</Text>
         <TextInput
-          style={styles.input}
+          style={inputStyle}
           value={income}
           onChangeText={setIncome}
           placeholder="월소득을 입력하세요"
+          placeholderTextColor={darkMode ? '#bbb' : '#888'}
           keyboardType="numeric"
         />
 
         {/* 고정 지출 */}
-        <Text style={styles.label}>고정 지출</Text>
+        <Text style={labelStyle}>고정 지출</Text>
         <TextInput
-          style={styles.input}
+          style={inputStyle}
           value={fixedExpense}
           onChangeText={setFixedExpense}
           placeholder="고정 지출을 입력하세요"
+          placeholderTextColor={darkMode ? '#bbb' : '#888'}
           keyboardType="numeric"
         />
 
         {/* 확인 버튼 */}
-        <TouchableOpacity style={styles.button} onPress={onSubmit}>
-          <Text style={styles.buttonText}>확인</Text>
+        <TouchableOpacity style={buttonStyle} onPress={onSubmit}>
+          <Text style={buttonTextStyle}>확인</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

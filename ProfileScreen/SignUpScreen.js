@@ -117,7 +117,7 @@ export default function SignUpScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FBFAFB', paddingHorizontal: 24 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 24, color: '#222', textAlign: 'center' },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 24, color: '#222', textAlign: 'center', marginTop: 10 },
   input: {
     width: '100%',
     height: 48,

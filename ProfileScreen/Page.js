@@ -10,9 +10,12 @@ import {
   Animated,
   Easing,
   Platform,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useThemeMode } from './ThemeContext';
+import { useUser } from './UserContext';
 // import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // 아이콘 라이브러리 사용 시
 
 const windowHeight = Dimensions.get('window').height;
@@ -21,9 +24,16 @@ export default function Page() {
   const navigation = useNavigation();
   const route = useRoute();
   const { darkMode } = useThemeMode();
+  const { user, logout } = useUser();
 
   // 프로필 데이터에서 소득과 고정지출 추출
-  const profileData = route.params?.profileData || {};
+  // route.params에서 가져오거나 없으면 사용자 프로필에서 가져오기
+  const routeProfileData = route.params?.profileData;
+  const userProfileData = user?.profileData || {};
+  
+  // route.params가 있으면 그것을 우선적으로 사용하고, 없으면 저장된 사용자 프로필 데이터 사용
+  const profileData = routeProfileData || userProfileData;
+  
   const income = Number(profileData.income) || 0;
   const fixedExpense = Number(profileData.fixedExpense) || 0;
   const spendingPercent = income > 0 ? Math.round((fixedExpense / income) * 100) : 0;
@@ -67,7 +77,7 @@ export default function Page() {
   const cardStyle = [styles.card, darkMode && styles.cardDark];
   const titleStyle = [styles.title, darkMode && { color: '#fff' }];
   const textStyle = [styles.text, darkMode && { color: '#bbb' }];
-  const loginTextStyle = [styles.loginText, darkMode && { color: '#fff' }];
+  const logoutTextStyle = [styles.logoutText, darkMode && { color: '#fff' }];
   const assetSummaryStyle = [styles.assetSummary, darkMode && styles.assetSummaryDark];
   const assetTitleStyle = [styles.assetTitle, darkMode && { color: '#bbb' }];
   const assetAmountStyle = [styles.assetAmount, darkMode && { color: '#70d7c7' }];
@@ -97,10 +107,14 @@ export default function Page() {
   };
 
   return (
-    <>
-      {/* 로그인 버튼 */}
-      <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('Login')}>
-        <Text style={loginTextStyle}>로그인</Text>
+    <SafeAreaView style={[styles.safeArea, darkMode && { backgroundColor: '#181A20' }]}>
+      {/* 로그아웃 버튼 */}
+      <TouchableOpacity style={styles.logoutButton} onPress={() => {
+        logout();
+        Alert.alert('알림', '로그아웃 되었습니다.');
+        navigation.navigate('Login');
+      }}>
+        <Text style={logoutTextStyle}>로그아웃</Text>
       </TouchableOpacity>
 
       {/* 메인 콘텐츠 */}
@@ -214,28 +228,31 @@ export default function Page() {
           </TouchableOpacity>
         ))}
       </View>
-    </>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F4F7FA',
+  },
   container: {
     flex: 1,
-    paddingTop: Platform.OS === 'ios' ? 60 : 35,
     paddingHorizontal: 16,
     backgroundColor: '#F4F7FA',
     marginBottom: 80,
   },
-  loginButton: {
+  logoutButton: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 22 : 10,
+    top: 10,
     right: 20,
     zIndex: 10,
     padding: 8,
     backgroundColor: 'transparent',
     borderRadius: 10,
   },
-  loginText: { color: '#2980b9', fontSize: 15, fontWeight: 'bold' },
+  logoutText: { color: '#e74c3c', fontSize: 15, fontWeight: 'bold' },
   card: {
     backgroundColor: '#fff',
     borderRadius: 14,
