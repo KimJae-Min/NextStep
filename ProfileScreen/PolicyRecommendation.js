@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeMode } from './ThemeContext';
 
 export default function AIPolicyScreen() {
@@ -29,6 +30,10 @@ export default function AIPolicyScreen() {
   };
 
   // 다크모드 조건부 스타일
+  const safeAreaStyle = [
+    styles.safeArea,
+    darkMode && { backgroundColor: '#181c1f' },
+  ];
   const containerStyle = [
     styles.container,
     darkMode && { backgroundColor: '#181c1f' },
@@ -105,74 +110,79 @@ export default function AIPolicyScreen() {
   ];
 
   return (
-    <ScrollView style={containerStyle} contentContainerStyle={{ paddingBottom: 60 }}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <Text style={headerTitleStyle}>AI 맞춤 정책 찾기</Text>
-        <Text style={subtitleStyle}>간단한 정보 입력으로 최적의 복지정책을 추천해드려요</Text>
-      </View>
+    <SafeAreaView style={safeAreaStyle}>
+      <ScrollView style={containerStyle} contentContainerStyle={styles.scrollContent}>
+        {/* 헤더 */}
+        <View style={styles.header}>
+          <Text style={headerTitleStyle}>AI 맞춤 정책 찾기</Text>
+          <Text style={subtitleStyle}>간단한 정보 입력으로 최적의 복지정책을 추천해드려요</Text>
+        </View>
 
-      {/* 입력 섹션 */}
-      <View style={inputSectionStyle}>
-        <View style={styles.inputGroup}>
-          <Text style={inputLabelStyle}>나이</Text>
-          <TextInput
-            style={inputStyle}
-            value={age}
-            onChangeText={setAge}
-            placeholder="나이를 입력하세요"
-            placeholderTextColor={darkMode ? "#bbb" : "#888"}
-            keyboardType="numeric"
-          />
+        {/* 입력 섹션 */}
+        <View style={inputSectionStyle}>
+          <View style={styles.inputGroup}>
+            <Text style={inputLabelStyle}>나이</Text>
+            <TextInput
+              style={inputStyle}
+              value={age}
+              onChangeText={setAge}
+              placeholder="나이를 입력하세요"
+              placeholderTextColor={darkMode ? "#bbb" : "#888"}
+              keyboardType="numeric"
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={inputLabelStyle}>직업현황</Text>
+            <TextInput
+              style={inputStyle}
+              value={job}
+              onChangeText={setJob}
+              placeholder="예) 학생, 구직자, 직장인"
+              placeholderTextColor={darkMode ? "#bbb" : "#888"}
+            />
+          </View>
+          <TouchableOpacity style={analyzeButtonStyle} onPress={recommendPolicy}>
+            <Text style={buttonTextStyle}>지금 바로 분석하기</Text>
+          </TouchableOpacity>
         </View>
-        <View style={styles.inputGroup}>
-          <Text style={inputLabelStyle}>직업현황</Text>
-          <TextInput
-            style={inputStyle}
-            value={job}
-            onChangeText={setJob}
-            placeholder="예) 학생, 구직자, 직장인"
-            placeholderTextColor={darkMode ? "#bbb" : "#888"}
-          />
-        </View>
-        <TouchableOpacity style={analyzeButtonStyle} onPress={recommendPolicy}>
-          <Text style={buttonTextStyle}>지금 바로 분석하기</Text>
-        </TouchableOpacity>
-      </View>
 
-      {/* 결과 표시 */}
-      {result.text && (
-        <View style={resultCardStyle(result.type)}>
-          <Text style={styles.resultIcon}>
-            {result.type === 'success'
-              ? '✅'
-              : result.type === 'error'
-              ? '⚠️'
-              : 'ℹ️'}
-          </Text>
-          <Text style={resultTextStyle}>{result.text}</Text>
-        </View>
-      )}
+        {/* 결과 표시 */}
+        {result.text && (
+          <View style={resultCardStyle(result.type)}>
+            <Text style={styles.resultIcon}>
+              {result.type === 'success'
+                ? '✅'
+                : result.type === 'error'
+                ? '⚠️'
+                : 'ℹ️'}
+            </Text>
+            <Text style={resultTextStyle}>{result.text}</Text>
+          </View>
+        )}
 
-      {/* 인기 정책 섹션 */}
-      <Text style={sectionTitleStyle}>🔥 인기 정책 모아보기</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={policyCardStyle}>
-          <Text style={policyTitleStyle}>청년내일저축계좌</Text>
-          <Text style={policyDescStyle}>월 70만원 적립 시 최대 1,800만원 지원</Text>
-          <Text style={policyTagStyle}>#24~34세 #소득하위80%</Text>
-        </View>
-        <View style={policyCardStyle}>
-          <Text style={policyTitleStyle}>주거안정자금</Text>
-          <Text style={policyDescStyle}>전세자금 대출 이자 1%p 감면</Text>
-          <Text style={policyTagStyle}>#무주택자 #신혼부부</Text>
-        </View>
+        {/* 인기 정책 섹션 */}
+        <Text style={sectionTitleStyle}>🔥 인기 정책 모아보기</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={policyCardStyle}>
+            <Text style={policyTitleStyle}>청년내일저축계좌</Text>
+            <Text style={policyDescStyle}>월 70만원 적립 시 최대 1,800만원 지원</Text>
+            <Text style={policyTagStyle}>#24~34세 #소득하위80%</Text>
+          </View>
+          <View style={policyCardStyle}>
+            <Text style={policyTitleStyle}>주거안정자금</Text>
+            <Text style={policyDescStyle}>전세자금 대출 이자 1%p 감면</Text>
+            <Text style={policyTagStyle}>#무주택자 #신혼부부</Text>
+          </View>
+        </ScrollView>
       </ScrollView>
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     padding: 24,
     backgroundColor: '#f8f9fc',

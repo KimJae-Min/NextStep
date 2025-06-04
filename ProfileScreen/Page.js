@@ -126,7 +126,7 @@ export default function Page() {
             contentContainerStyle={{ paddingBottom: 32 }}
           >
             {/* 소득 정보(월수입) */}
-            <Animated.View style={[cardStyle, animatedCard]}>
+            <Animated.View style={[cardStyle, animatedCard, { marginTop: 25 }]}>
               <View style={styles.cardHeader}>
                 {/* <Icon name="wallet" size={22} color={darkMode ? "#70d7c7" : "#2980b9"} /> */}
                 <Text style={styles.cardIcon}>💸</Text>
@@ -244,6 +244,7 @@ const styles = StyleSheet.create({
     marginBottom: 80,
   },
   logoutButton: {
+    marginTop: 15,
     position: 'absolute',
     top: 10,
     right: 20,
@@ -316,6 +317,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   buttonContainer: {
+    marginTop: 15,
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginVertical: 10,
