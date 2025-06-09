@@ -1,32 +1,30 @@
-### backend/user.py
-
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-import os
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from backend.database import get_db, User
+from backend.schemas import UserCreate, UserOut
+from backend.auth import get_password_hash, get_current_user
 
-from backend.database import SessionLocal, User
-from backend.schemas import UserOut
-from backend.auth import oauth2_scheme, read_users_me
+router = APIRouter(prefix="/users", tags=["users"])
 
-router = APIRouter()
+@router.post("/", response_model=UserOut)
+async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.email == user.email))
+    if result.scalars().first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+    hashed_password = get_password_hash(user.password)
+    new_user = User(
+        username=user.username,
+        email=user.email,
+        hashed_password=hashed_password
+    )
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+    return UserOut.from_orm(new_user)  # Pydantic 1.x에서 반드시 이 방식!
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+
 
 @router.get("/me", response_model=UserOut)
-def get_my_profile(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    return read_users_me(token, db)
-
-@router.put("/me", response_model=UserOut)
-def update_my_profile(email: str, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    user.email = email
-    db.commit()
-    db.refresh(user)
-    return user
+async def get_me(current_user=Depends(get_current_user)):
+    return current_user
