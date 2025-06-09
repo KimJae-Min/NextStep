@@ -1,44 +1,49 @@
-### backend/forecast.py
-
-from fastapi import APIRouter, Depends
-from fastapi.exceptions import HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Depends
 from typing import List
-from prophet import Prophet
+from sqlalchemy.ext.asyncio import AsyncSession
+from backend.database import get_db, ForecastLog, User
+from backend.schemas import ForecastRequestSchema, ForecastResponseItem
+from backend.auth import get_current_user
 import pandas as pd
-from backend.auth import oauth2_scheme, read_users_me
-from sqlalchemy.orm import Session
-from backend.database import SessionLocal, ForecastLog
+from prophet import Prophet
 
-router = APIRouter()
+router = APIRouter(prefix="/forecast", tags=["forecast"])
 
-class ForecastRequest(BaseModel):
-    data: List[dict]  # list of {"ds": "YYYY-MM-DD", "y": value}
-    periods: int = 7
+@router.post("/", response_model=List[ForecastResponseItem], summary="지출 예측")
+async def forecast(
+    req: ForecastRequestSchema,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        df = pd.DataFrame([item.dict() for item in req.data])
+        df["ds"] = pd.to_datetime(df["ds"])
+    except Exception:
+        raise HTTPException(status_code=400, detail="잘못된 시계열 데이터입니다.")
 
-class ForecastPoint(BaseModel):
-    ds: pd.Timestamp
-    yhat: float
-    yhat_lower: float
-    yhat_upper: float
-
-@router.post("/", response_model=List[ForecastPoint], tags=["forecast"])
-def forecast(req: ForecastRequest, token: str = Depends(oauth2_scheme)):
-    db: Session = SessionLocal()
-    user = read_users_me(token, db)
-    # 요청 로그 기록
-    log = ForecastLog(user_id=user.id, timestamp=pd.Timestamp.now(), data_points=len(req.data))
-    db.add(log)
-    db.commit()
-
-    # 데이터프레임 생성 및 예측
-    df = pd.DataFrame(req.data)
-    df["ds"] = pd.to_datetime(df["ds"])
     m = Prophet()
     m.fit(df)
     future = m.make_future_dataframe(periods=req.periods)
     fc = m.predict(future)
-    result = fc[["ds", "yhat", "yhat_lower", "yhat_upper"]].tail(req.periods)
-    db.close()
-    return result.to_dict(orient="records")
 
+    recent = fc[["ds", "yhat", "yhat_lower", "yhat_upper"]].tail(req.periods)
+    response_list = [
+        ForecastResponseItem(
+            ds=row["ds"].to_pydatetime(),
+            yhat=float(row["yhat"]),
+            yhat_lower=float(row["yhat_lower"]),
+            yhat_upper=float(row["yhat_upper"]),
+        )
+        for _, row in recent.iterrows()
+    ]
+    try:
+        log_entry = ForecastLog(
+            user_id=current_user.id,
+            request_data=req.json(),
+            response_data=[item.dict() for item in response_list],
+        )
+        db.add(log_entry)
+        await db.commit()
+    except Exception:
+        await db.rollback()
+    return response_list
