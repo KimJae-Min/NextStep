@@ -1,59 +1,62 @@
-### backend/policy.py
-
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, Query
+from typing import List
+from backend.auth import get_current_user, User
+from backend.schemas import PolicyRecommendationOut
 import numpy as np
-import json
 import faiss
+import json
+from transformers import AutoTokenizer, AutoModel
 import torch
-from transformers import BertTokenizer, BertModel
-from pathlib import Path
-from backend.auth import oauth2_scheme, read_users_me
-from backend.database import SessionLocal
+from backend.query_expansion import query_expand
 
-# 라우터 설정
-router = APIRouter()
+torch.set_num_threads(1)
+torch.set_num_interop_threads(1)
 
-# 모델 및 토크나이저 로드
-tokenizer = BertTokenizer.from_pretrained("monologg/kobert")
-model = BertModel.from_pretrained("monologg/kobert")
+tokenizer = AutoTokenizer.from_pretrained("monologg/kobert", trust_remote_code=True)
+model = AutoModel.from_pretrained("monologg/kobert", trust_remote_code=True)
 model.eval()
 
-# 임베딩 및 메타 로드
-EMBEDDINGS_FILE = Path("data/policy_embeddings.npy")
-META_FILE = Path("data/policy_meta.json")
-INDEX_FILE = Path("data/policy_index.faiss")
-embs = np.load(EMBEDDINGS_FILE)
-meta = json.loads(META_FILE.read_text(encoding="utf-8"))
-index = faiss.read_index(str(INDEX_FILE))
+DATA_DIR = "data"
+EMBEDDINGS_FILE = f"{DATA_DIR}/policy_embeddings.npy"
+INDEX_FILE = f"{DATA_DIR}/policy_index.faiss"
+META_FILE = f"{DATA_DIR}/policy_meta.json"
 
-class RecommendRequest(BaseModel):
-    user_profile: str
-    top_k: int = 5
+policy_embeddings = np.load(EMBEDDINGS_FILE)
+policy_index = faiss.read_index(INDEX_FILE)
+with open(META_FILE, encoding="utf-8") as f:
+    policy_meta = json.load(f)
 
-class RecommendResponse(BaseModel):
-    policy_name: str
-    url: str | None = None
+router = APIRouter()
 
-@router.post("/", response_model=list[RecommendResponse], tags=["recommend"])
-def recommend(req: RecommendRequest, token: str = Depends(oauth2_scheme)):
-    # 사용자 인증 및 프로필 검증
-    db = SessionLocal()
-    user = read_users_me(token, db)
-    db.close()
-
-    # 프로필 임베딩 함수
-    inputs = tokenizer(req.user_profile, return_tensors="pt", truncation=True, max_length=512)
+def embed_text_with_expansion(text: str) -> np.ndarray:
+    expanded_tags = query_expand(text)
+    text_full = text + " " + " ".join(expanded_tags)
+    inputs = tokenizer(text_full, return_tensors="pt", truncation=True, max_length=512)
     with torch.no_grad():
-        vec = model(**inputs).last_hidden_state.mean(dim=1).squeeze().numpy().astype('float32')
+        out = model(**inputs).last_hidden_state.mean(dim=1).squeeze().numpy()
+        out = out / (np.linalg.norm(out) + 1e-10)
+    return out.reshape(1, -1).astype("float32")
 
-    # Faiss 유사도 검색
-    D, I = index.search(vec.reshape(1, -1), req.top_k)
-    results = []
-    for idx in I[0]:
-        info = meta[idx]
-        results.append(RecommendResponse(
-            policy_name=info["policy_name"],
-            url=info.get("url")
-        ))
-    return results
+def search_similar_policies(query_embedding: np.ndarray, top_k: int = 5):
+    D, I = policy_index.search(query_embedding, top_k)
+    return I[0].tolist()
+
+def rerank_with_tags(results, query_tags):
+    def score(policy):
+        policy_tags = policy.get("trgterIndvdlArray", "")
+        s = sum([1 for tag in query_tags if tag in policy_tags])
+        return s
+    return sorted(results, key=lambda p: score(p), reverse=True)
+
+@router.get("/recommend", response_model=List[PolicyRecommendationOut])
+async def recommend_policies(
+    query: str = Query(..., description="정책 추천을 위한 사용자 자연어/상황"),
+    top_k: int = Query(5, description="추천 정책 개수"),
+    current_user: User = Depends(get_current_user)
+):
+    query_tags = query_expand(query)
+    query_vec = embed_text_with_expansion(query)
+    indices = search_similar_policies(query_vec, top_k=top_k*2)
+    results = [policy_meta[i] for i in indices]
+    results_reranked = rerank_with_tags(results, query_tags)
+    return results_reranked[:top_k]
